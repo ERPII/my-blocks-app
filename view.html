@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MyBlocks - צפייה</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Assistant:wght@400;800&display=swap');
         body { font-family: 'Assistant', sans-serif; background: #fff; }
@@ -12,16 +13,15 @@
 </head>
 <body class="flex items-center justify-center min-h-screen p-6">
 
-    <div id="content" class="max-w-md w-full text-center hidden">
-        <div id="media-box" class="rounded-[3rem] overflow-hidden shadow-2xl mb-10 h-80 bg-slate-50 border border-slate-100"></div>
-        <h1 id="title" class="text-4xl font-black text-slate-800 mb-4"></h1>
-        <p id="desc" class="text-slate-500 text-lg mb-10 leading-relaxed"></p>
-        <a id="btn" href="#" target="_blank" class="inline-block w-full py-5 bg-indigo-600 text-white rounded-[2rem] font-bold shadow-xl shadow-indigo-100 hover:bg-indigo-700 transition transform active:scale-95">מעבר לתוכן המלא</a>
+    <div id="loader" class="flex flex-col items-center gap-4">
+        <div class="w-12 h-12 border-4 border-indigo-100 border-t-indigo-600 rounded-full animate-spin"></div>
     </div>
 
-    <div id="loader" class="flex flex-col items-center gap-4">
-        <div class="w-12 h-12 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin"></div>
-        <span class="text-slate-400 font-bold">טוען תוכן...</span>
+    <div id="content" class="max-w-md w-full text-center hidden">
+        <div id="media-box" class="rounded-[3.5rem] overflow-hidden shadow-2xl mb-10 h-80 bg-slate-50 border border-slate-100"></div>
+        <h1 id="title" class="text-4xl font-black text-slate-800 mb-4"></h1>
+        <p id="desc" class="text-slate-500 text-lg mb-12 px-4"></p>
+        <a id="btn" href="#" target="_blank" class="inline-block w-full py-6 bg-indigo-600 text-white rounded-[2.5rem] font-black shadow-2xl shadow-indigo-200 hover:bg-indigo-700 transition transform active:scale-95">מעבר לתוכן</a>
     </div>
 
     <script type="module">
@@ -46,12 +46,13 @@
             getDoc(doc(db, "blocks", id)).then(snap => {
                 if(snap.exists()) {
                     const d = snap.data();
+                    document.title = d.title; // משנה את שם הלשונית לשם הקובייה
                     document.getElementById('title').innerText = d.title;
                     document.getElementById('desc').innerText = d.description || "";
                     
                     const mb = document.getElementById('media-box');
                     if(d.mediaUrl) mb.innerHTML = `<img src="${d.mediaUrl}" class="w-full h-full object-cover">`;
-                    else mb.innerHTML = `<div class="w-full h-full bg-slate-100 flex items-center justify-center text-slate-200 text-6xl"><i class="fas fa-image"></i></div>`;
+                    else mb.innerHTML = `<div class="w-full h-full flex items-center justify-center text-slate-200 text-7xl"><i class="fas fa-image"></i></div>`;
                     
                     if(d.url) document.getElementById('btn').href = d.url;
                     else document.getElementById('btn').style.display = 'none';
@@ -59,10 +60,8 @@
                     document.getElementById('loader').style.display = 'none';
                     document.getElementById('content').classList.remove('hidden');
                 } else {
-                    document.getElementById('loader').innerHTML = "<span class='text-red-400'>התוכן לא נמצא או נמחק ❌</span>";
+                    document.getElementById('loader').innerHTML = "<p class='font-bold text-red-500'>התוכן לא נמצא 😕</p>";
                 }
-            }).catch(e => {
-                document.getElementById('loader').innerHTML = "<span class='text-red-400'>שגיאת תקשורת. בדוק הרשאות Firebase 🔒</span>";
             });
         }
     </script>
