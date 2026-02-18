@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MyBlocks - ניהול תוכן</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Assistant:wght@400;700;800&display=swap');
+        body { font-family: 'Assistant', sans-serif; background: #f1f5f9; }
+        .active-cat { background: #4f46e5 !important; color: white !important; }
+        #toast { visibility: hidden; min-width: 200px; background: #333; color: #fff; text-align: center; border-radius: 12px; padding: 16px; position: fixed; z-index: 100; left: 50%; bottom: 30px; transform: translateX(-50%); opacity: 0; transition: 0.4s; }
+        #toast.show { visibility: visible; opacity: 1; }
+    </style>
+</head>
+<body class="p-4 md:p-8">
+
+    <div id="toast">הקישור הועתק! 📋</div>
+
+    <div class="max-w-6xl mx-auto">
+        <div class="flex flex-col md:flex-row justify-between items-center mb-8 gap-4">
+            <h1 class="text-3xl font-extrabold text-slate-800">הקוביות שלי</h1>
+            <div class="relative w-full md:w-96">
+                <input type="text" id="searchInput" oninput="renderCards()" placeholder="חפש לפי שם..." class="w-full p-4 pr-12 rounded-2xl border-none shadow-sm outline-none focus:ring-2 focus:ring-indigo-500">
+                <i class="fas fa-search absolute right-4 top-1/2 -translate-y-1/2 text-slate-400"></i>
+            </div>
+        </div>
+
+        <div class="bg-white p-6 md:p-8 rounded-[2rem] shadow-lg mb-10 border border-white">
+            <h2 class="text-xl font-bold mb-6 text-slate-700">צור קובייה חדשה</h2>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <input type="text" id="title" placeholder="כותרת הקובייה *" class="p-4 bg-slate-50 rounded-xl outline-none focus:bg-white transition border-none shadow-inner">
+                
+                <div class="flex gap-2">
+                    <select id="catSelect" class="flex-1 p-4 bg-slate-50 rounded-xl outline-none border-none shadow-inner cursor-pointer">
+                        <option value="כללי">כללי</option>
+                    </select>
+                    <button onclick="addCategory()" class="bg-indigo-50 text-indigo-600 px-4 rounded-xl hover:bg-indigo-100"><i class="fas fa-plus"></i></button>
+                </div>
+
+                <input type="url" id="url" placeholder="קישור יעד (אופציונלי)" class="p-4 bg-slate-50 rounded-xl outline-none border-none shadow-inner" dir="ltr">
+                
+                <textarea id="desc" placeholder="תיאור חופשי..." class="md:col-span-2 p-4 bg-slate-50 rounded-xl outline-none h-16 border-none shadow-inner"></textarea>
+                
+                <div class="relative h-16 border-2 border-dashed border-slate-200 rounded-xl flex items-center justify-center hover:bg-slate-50 transition">
+                    <input type="file" id="file" class="absolute inset-0 opacity-0 cursor-pointer">
+                    <span class="text-slate-400 text-sm font-bold"><i class="fas fa-image mr-2"></i> העלה מדיה</span>
+                </div>
+            </div>
+            <button onclick="save()" id="saveBtn" class="mt-6 bg-indigo-600 text-white px-10 py-4 rounded-2xl font-bold hover:bg-indigo-700 shadow-lg shadow-indigo-200 transition active:scale-95">שמור קובייה ✨</button>
+        </div>
+
+        <div id="catFilter" class="flex gap-2 mb-8 overflow-x-auto pb-2">
+            <button onclick="setFilter('הכל')" class="filter-btn active-cat px-6 py-2 rounded-full bg-white shadow-sm font-bold text-sm">הכל</button>
+        </div>
+
+        <div id="canvas" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js";
+        import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, doc, deleteDoc, setDoc } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore.js";
+        import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-storage.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyB0f0u0WqlScU5r9PE0wm0GkKA3f1MFHv8",
+            authDomain: "myblocksapp-a7d1c.firebaseapp.com",
+            projectId: "myblocksapp-a7d1c",
+            storageBucket: "myblocksapp-a7d1c.firebasestorage.app",
+            messagingSenderId: "273089143135",
+            appId: "1:273089143135:web:7544f1810bc21b4a5856ea"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const storage = getStorage(app);
+        let blocks = [];
+        let currentFilter = 'הכל';
+
+        onSnapshot(collection(db, "categories"), (s) => {
+            const sel = document.getElementById('catSelect');
+            const fil = document.getElementById('catFilter');
+            sel.innerHTML = '<option value="כללי">כללי</option>';
+            fil.innerHTML = `<button onclick="setFilter('הכל')" class="filter-btn ${currentFilter==='הכל'?'active-cat':''} px-6 py-2 rounded-full bg-white shadow-sm font-bold text-sm">הכל</button>`;
+            s.forEach(d => {
+                sel.innerHTML += `<option value="${d.id}">${d.id}</option>`;
+                fil.innerHTML += `<button onclick="setFilter('${d.id}')" class="filter-btn ${currentFilter===d.id?'active-cat':''} px-6 py-2 rounded-full bg-white shadow-sm font-bold text-sm">${d.id}</button>`;
+            });
+        });
+
+        onSnapshot(query(collection(db, "blocks"), orderBy("createdAt", "desc")), (s) => {
+            blocks = [];
+            s.forEach(d => blocks.push({id: d.id, ...d.data()}));
+            renderCards();
+        });
+
+        window.renderCards = () => {
+            const search = document.getElementById('searchInput').value.toLowerCase();
+            const container = document.getElementById('canvas');
+            container.innerHTML = '';
+
+            blocks.filter(b => (currentFilter === 'הכל' || b.category === currentFilter) && b.title.toLowerCase().includes(search))
+            .forEach(b => {
+                const shareUrl = `${window.location.origin}${window.location.pathname.replace('index.html', '')}view.html?id=${b.id}`;
+                
+                container.innerHTML += `
+                    <div class="bg-white rounded-[2rem] overflow-hidden shadow-sm hover:shadow-xl transition-all border border-slate-50 flex flex-col h-full">
+                        <div class="h-40 bg-slate-100 relative">
+                            ${b.mediaUrl ? `<img src="${b.mediaUrl}" class="w-full h-full object-cover">` : `<div class="w-full h-full flex items-center justify-center text-slate-300"><i class="fas fa-image text-2xl"></i></div>`}
+                            <div class="absolute top-3 left-3 bg-white/80 px-3 py-1 rounded-full text-[10px] font-bold text-indigo-600">${b.category}</div>
+                        </div>
+                        <div class="p-5 flex-1 flex flex-col">
+                            <h3 class="font-bold text-slate-800 mb-1">${b.title}</h3>
+                            <p class="text-slate-400 text-xs mb-4 line-clamp-2">${b.description || ''}</p>
+                            <div class="mt-auto flex gap-2">
+                                <button onclick="copyLink('${shareUrl}')" class="flex-1 py-3 bg-indigo-50 text-indigo-600 rounded-xl text-xs font-bold">העתק קישור</button>
+                                <button onclick="deleteB('${b.id}', '${b.mediaUrl}')" class="w-12 bg-red-50 text-red-400 rounded-xl"><i class="fas fa-trash"></i></button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+        };
+
+        window.setFilter = (c) => { currentFilter = c; renderCards(); };
+        window.addCategory = async () => {
+            const n = prompt("שם קטגוריה:");
+            if(n) await setDoc(doc(db, "categories", n), {});
+        };
+
+        window.save = async () => {
+            const t = document.getElementById('title').value;
+            if(!t) return alert("חובה כותרת!");
+            const btn = document.getElementById('saveBtn');
+            btn.disabled = true; btn.innerText = "מעלה...";
+            try {
+                let mUrl = "";
+                const f = document.getElementById('file').files[0];
+                if(f) {
+                    const r = ref(storage, `content/${Date.now()}_${f.name}`);
+                    await uploadBytes(r, f);
+                    mUrl = await getDownloadURL(r);
+                }
+                await addDoc(collection(db, "blocks"), {
+                    title: t,
+                    category: document.getElementById('catSelect').value,
+                    url: document.getElementById('url').value,
+                    description: document.getElementById('desc').value,
+                    mediaUrl: mUrl,
+                    createdAt: new Date()
+                });
+                document.getElementById('title').value = '';
+                document.getElementById('desc').value = '';
+                document.getElementById('file').value = '';
+            } catch(e) { alert("שגיאה: " + e.message); }
+            finally { btn.disabled = false; btn.innerText = "שמור קובייה ✨"; }
+        };
+
+        window.copyLink = (l) => {
+            navigator.clipboard.writeText(l);
+            const toast = document.getElementById('toast');
+            toast.className = "show";
+            setTimeout(() => toast.className = "", 3000);
+        };
+
+        window.deleteB = async (id, m) => {
+            if(!confirm("למחוק?")) return;
+            if(m) await deleteObject(ref(storage, m)).catch(()=>{});
+            await deleteDoc(doc(db, "blocks", id));
+        };
+    </script>
+</body>
+</html>

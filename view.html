@@ -3,25 +3,23 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MyBlock - צפייה</title>
+    <title>צפייה בתוכן</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Assistant:wght@400;800&display=swap');
+        body { font-family: 'Assistant', sans-serif; background: #fff; }
+    </style>
 </head>
-<body class="bg-slate-100 flex items-center justify-center min-h-screen p-4">
+<body class="flex items-center justify-center min-h-screen p-6">
 
-    <div id="loader" class="text-indigo-600 font-bold">טוען...</div>
-
-    <div id="card" class="hidden max-w-sm w-full bg-white rounded-[2rem] shadow-2xl overflow-hidden">
-        <div id="media-header" class="w-full bg-gray-200 min-h-[150px] flex items-center justify-center"></div>
-        
-        <div class="p-8 text-center">
-            <h1 id="title" class="text-2xl font-bold text-gray-800 mb-3"></h1>
-            <p id="desc" class="text-gray-500 text-sm mb-8"></p>
-            
-            <a id="action-link" href="#" target="_blank" class="hidden w-full py-4 bg-indigo-600 text-white font-bold rounded-2xl shadow-lg">
-                למעבר לקישור
-            </a>
-        </div>
+    <div id="content" class="max-w-md w-full text-center hidden">
+        <div id="media-box" class="rounded-[2.5rem] overflow-hidden shadow-2xl mb-8 h-80 bg-slate-100"></div>
+        <h1 id="title" class="text-3xl font-black text-slate-800 mb-4"></h1>
+        <p id="desc" class="text-slate-500 mb-10 leading-relaxed"></p>
+        <a id="btn" href="#" target="_blank" class="inline-block w-full py-5 bg-indigo-600 text-white rounded-3xl font-bold shadow-xl shadow-indigo-200 hover:bg-indigo-700 transition">מעבר לקישור</a>
     </div>
+
+    <div id="loader" class="text-slate-300 text-xl font-bold">טוען תוכן...</div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js";
@@ -31,41 +29,36 @@
             apiKey: "AIzaSyB0f0u0WqlScU5r9PE0wm0GkKA3f1MFHv8",
             authDomain: "myblocksapp-a7d1c.firebaseapp.com",
             projectId: "myblocksapp-a7d1c",
-            storageBucket: "myblocksapp-a7d1c.firebasestorage.app",
-            messagingSenderId: "273089143135",
-            appId: "1:273089143135:web:7544f1810bc21b4a5856ea"
+            storageBucket: "myblocksapp-a7d1c.firebasestorage.app"
         };
 
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
-        async function init() {
-            const id = new URLSearchParams(window.location.search).get('id');
-            const snap = await getDoc(doc(db, "blocks", id));
-            if(snap.exists()) {
-                const d = snap.data();
-                document.getElementById('title').innerText = d.title;
-                document.getElementById('desc').innerText = d.description || '';
-                
-                if(d.url) {
-                    const link = document.getElementById('action-link');
-                    link.href = d.url;
-                    link.classList.remove('hidden');
-                }
+        const params = new URLSearchParams(window.location.search);
+        const id = params.get('id');
 
-                const mediaBox = document.getElementById('media-header');
-                if(d.mediaUrl) {
-                    if(d.mediaType?.includes('image')) mediaBox.innerHTML = `<img src="${d.mediaUrl}" class="w-full h-full object-cover">`;
-                    else if(d.mediaType?.includes('video')) mediaBox.innerHTML = `<video src="${d.mediaUrl}" controls class="w-full"></video>`;
+        if(id) {
+            getDoc(doc(db, "blocks", id)).then(snap => {
+                if(snap.exists()) {
+                    const d = snap.data();
+                    document.getElementById('title').innerText = d.title;
+                    document.getElementById('desc').innerText = d.description || "";
+                    
+                    const mb = document.getElementById('media-box');
+                    if(d.mediaUrl) mb.innerHTML = `<img src="${d.mediaUrl}" class="w-full h-full object-cover">`;
+                    else mb.innerHTML = `<div class="w-full h-full bg-indigo-500 flex items-center justify-center text-white text-5xl font-black">${d.title[0]}</div>`;
+                    
+                    if(d.url) document.getElementById('btn').href = d.url;
+                    else document.getElementById('btn').style.display = 'none';
+                    
+                    document.getElementById('loader').style.display = 'none';
+                    document.getElementById('content').classList.remove('hidden');
                 } else {
-                    mediaBox.className = "h-12 bg-indigo-500";
+                    document.getElementById('loader').innerText = "התוכן לא נמצא 😕";
                 }
-
-                document.getElementById('loader').classList.add('hidden');
-                document.getElementById('card').classList.remove('hidden');
-            }
+            });
         }
-        init();
     </script>
 </body>
 </html>
