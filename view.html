@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>צפייה בתוכן</title>
+    <title>MyBlocks - צפייה</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Assistant:wght@400;800&display=swap');
@@ -13,13 +13,16 @@
 <body class="flex items-center justify-center min-h-screen p-6">
 
     <div id="content" class="max-w-md w-full text-center hidden">
-        <div id="media-box" class="rounded-[2.5rem] overflow-hidden shadow-2xl mb-8 h-80 bg-slate-100"></div>
-        <h1 id="title" class="text-3xl font-black text-slate-800 mb-4"></h1>
-        <p id="desc" class="text-slate-500 mb-10 leading-relaxed"></p>
-        <a id="btn" href="#" target="_blank" class="inline-block w-full py-5 bg-indigo-600 text-white rounded-3xl font-bold shadow-xl shadow-indigo-200 hover:bg-indigo-700 transition">מעבר לקישור</a>
+        <div id="media-box" class="rounded-[3rem] overflow-hidden shadow-2xl mb-10 h-80 bg-slate-50 border border-slate-100"></div>
+        <h1 id="title" class="text-4xl font-black text-slate-800 mb-4"></h1>
+        <p id="desc" class="text-slate-500 text-lg mb-10 leading-relaxed"></p>
+        <a id="btn" href="#" target="_blank" class="inline-block w-full py-5 bg-indigo-600 text-white rounded-[2rem] font-bold shadow-xl shadow-indigo-100 hover:bg-indigo-700 transition transform active:scale-95">מעבר לתוכן המלא</a>
     </div>
 
-    <div id="loader" class="text-slate-300 text-xl font-bold">טוען תוכן...</div>
+    <div id="loader" class="flex flex-col items-center gap-4">
+        <div class="w-12 h-12 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin"></div>
+        <span class="text-slate-400 font-bold">טוען תוכן...</span>
+    </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js";
@@ -29,14 +32,15 @@
             apiKey: "AIzaSyB0f0u0WqlScU5r9PE0wm0GkKA3f1MFHv8",
             authDomain: "myblocksapp-a7d1c.firebaseapp.com",
             projectId: "myblocksapp-a7d1c",
-            storageBucket: "myblocksapp-a7d1c.firebasestorage.app"
+            storageBucket: "myblocksapp-a7d1c.firebasestorage.app",
+            messagingSenderId: "273089143135",
+            appId: "1:273089143135:web:7544f1810bc21b4a5856ea"
         };
 
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
-        const params = new URLSearchParams(window.location.search);
-        const id = params.get('id');
+        const id = new URLSearchParams(window.location.search).get('id');
 
         if(id) {
             getDoc(doc(db, "blocks", id)).then(snap => {
@@ -47,7 +51,7 @@
                     
                     const mb = document.getElementById('media-box');
                     if(d.mediaUrl) mb.innerHTML = `<img src="${d.mediaUrl}" class="w-full h-full object-cover">`;
-                    else mb.innerHTML = `<div class="w-full h-full bg-indigo-500 flex items-center justify-center text-white text-5xl font-black">${d.title[0]}</div>`;
+                    else mb.innerHTML = `<div class="w-full h-full bg-slate-100 flex items-center justify-center text-slate-200 text-6xl"><i class="fas fa-image"></i></div>`;
                     
                     if(d.url) document.getElementById('btn').href = d.url;
                     else document.getElementById('btn').style.display = 'none';
@@ -55,8 +59,10 @@
                     document.getElementById('loader').style.display = 'none';
                     document.getElementById('content').classList.remove('hidden');
                 } else {
-                    document.getElementById('loader').innerText = "התוכן לא נמצא 😕";
+                    document.getElementById('loader').innerHTML = "<span class='text-red-400'>התוכן לא נמצא או נמחק ❌</span>";
                 }
+            }).catch(e => {
+                document.getElementById('loader').innerHTML = "<span class='text-red-400'>שגיאת תקשורת. בדוק הרשאות Firebase 🔒</span>";
             });
         }
     </script>
