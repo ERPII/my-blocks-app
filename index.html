@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MyBlocks - Dashboard</title>
+    <title>MyBlocks - ניהול חכם</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
@@ -13,15 +13,29 @@
         #toast { 
             visibility: hidden; min-width: 280px; background: #1e293b; color: #fff; 
             text-align: center; border-radius: 1rem; padding: 16px; position: fixed; 
-            z-index: 1000; left: 50%; bottom: 30px; transform: translateX(-50%); 
+            z-index: 2000; left: 50%; bottom: 30px; transform: translateX(-50%); 
             opacity: 0; transition: 0.4s; box-shadow: 0 10px 25px rgba(0,0,0,0.2); 
         }
         #toast.show { visibility: visible; opacity: 1; }
+        .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center; backdrop-filter: blur(4px); }
+        .modal.active { display: flex; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
     </style>
 </head>
 <body class="p-4 md:p-8">
 
-    <div id="toast">✅ הקישור הועתק!</div>
+    <div id="toast">✨ הקישור הועתק!</div>
+
+    <div id="catModal" class="modal">
+        <div class="bg-white p-8 rounded-[2rem] w-80 shadow-2xl text-center">
+            <h3 class="text-xl font-black mb-4">קטגוריה חדשה</h3>
+            <input type="text" id="newCatName" placeholder="שם הקטגוריה..." class="w-full p-4 bg-slate-50 rounded-xl mb-4 outline-none focus:ring-2 focus:ring-indigo-500">
+            <div class="flex gap-2">
+                <button onclick="confirmAddCategory()" class="flex-1 bg-indigo-600 text-white py-3 rounded-xl font-bold">הוסף</button>
+                <button onclick="closeModal('catModal')" class="flex-1 bg-slate-100 text-slate-500 py-3 rounded-xl font-bold">ביטול</button>
+            </div>
+        </div>
+    </div>
 
     <div class="max-w-6xl mx-auto">
         <div class="flex flex-col md:flex-row justify-between items-center mb-10 gap-4">
@@ -33,35 +47,35 @@
         </div>
 
         <div class="bg-white p-6 md:p-8 rounded-[2.5rem] shadow-xl mb-12 border border-slate-100">
-            <h2 class="text-xl font-bold mb-6 text-slate-700 font-black">צור קובייה חדשה</h2>
+            <h2 id="formTitle" class="text-xl font-bold mb-6 text-slate-700 font-black">צור קובייה חדשה</h2>
+            <input type="hidden" id="editId">
             <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
                 <input type="text" id="title" placeholder="כותרת *" class="p-4 bg-slate-50 rounded-2xl outline-none focus:ring-2 focus:ring-indigo-400 border-none shadow-inner">
                 <div class="flex gap-2">
-                    <select id="catSelect" class="flex-1 p-4 bg-slate-50 rounded-2xl border-none shadow-inner cursor-pointer outline-none">
-                        <option value="כללי">כללי</option>
-                    </select>
-                    <button onclick="addCategory()" class="bg-indigo-50 text-indigo-600 px-5 rounded-2xl hover:bg-indigo-100 transition"><i class="fas fa-plus"></i></button>
+                    <select id="catSelect" class="flex-1 p-4 bg-slate-50 rounded-2xl border-none shadow-inner cursor-pointer outline-none"></select>
+                    <button onclick="openModal('catModal')" class="bg-indigo-50 text-indigo-600 px-5 rounded-2xl hover:bg-indigo-100 transition"><i class="fas fa-plus"></i></button>
                 </div>
-                <input type="url" id="url" placeholder="קישור חיצוני (לא חובה)" class="p-4 bg-slate-50 rounded-2xl border-none shadow-inner text-left outline-none" dir="ltr">
+                <input type="url" id="url" placeholder="קישור חיצוני (https://...)" class="p-4 bg-slate-50 rounded-2xl border-none shadow-inner text-left outline-none" dir="ltr">
                 <textarea id="desc" placeholder="תיאור קצר..." class="md:col-span-2 p-4 bg-slate-50 rounded-2xl h-20 border-none shadow-inner resize-none outline-none"></textarea>
                 <div class="relative h-20 border-2 border-dashed border-slate-200 rounded-2xl flex items-center justify-center hover:bg-indigo-50 transition cursor-pointer">
                     <input type="file" id="file" class="absolute inset-0 opacity-0 cursor-pointer">
                     <span id="fileNameDisplay" class="text-slate-400 text-sm font-bold"><i class="fas fa-image mr-2"></i> העלה תמונה</span>
                 </div>
             </div>
-            <button onclick="save()" id="saveBtn" class="mt-8 bg-indigo-600 text-white px-12 py-4 rounded-2xl font-black hover:bg-indigo-700 shadow-lg transition active:scale-95">שמור קובייה ✨</button>
+            <div class="flex gap-3 mt-8">
+                <button onclick="save()" id="saveBtn" class="bg-indigo-600 text-white px-12 py-4 rounded-2xl font-black hover:bg-indigo-700 shadow-lg transition active:scale-95">שמור קובייה ✨</button>
+                <button id="cancelEditBtn" onclick="resetForm()" class="hidden bg-slate-100 text-slate-500 px-8 py-4 rounded-2xl font-bold hover:bg-slate-200 transition">ביטול עריכה</button>
+            </div>
         </div>
 
-        <div id="catFilter" class="flex gap-3 mb-10 overflow-x-auto pb-4">
-            <button onclick="setFilter('הכל')" class="filter-btn active-cat px-8 py-3 rounded-full bg-white shadow-sm font-bold text-sm border border-slate-100">הכל</button>
-        </div>
+        <div id="catFilter" class="flex gap-3 mb-10 overflow-x-auto pb-4 no-scrollbar"></div>
 
         <div id="canvas" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 pb-24"></div>
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js";
-        import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, doc, deleteDoc, setDoc } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, doc, deleteDoc, setDoc, updateDoc } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore.js";
         import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-storage.js";
 
         const firebaseConfig = {
@@ -103,20 +117,37 @@
 
             blocks.filter(b => (currentFilter === 'הכל' || b.category === currentFilter) && b.title.toLowerCase().includes(search))
             .forEach(b => {
-                // תיקון הקישור ל-GitHub Pages
-                const baseUrl = window.location.href.split('index.html')[0].split('?')[0].split('#')[0];
+                const baseUrl = window.location.origin + window.location.pathname.replace('index.html', '');
                 const shareUrl = (baseUrl.endsWith('/') ? baseUrl : baseUrl + '/') + 'view.html?id=' + b.id;
                 const safeTitle = b.title.replace(/'/g, "\\'");
+                
+                // עיבוד תאריך ושעה
+                const dateObj = b.createdAt?.toDate ? b.createdAt.toDate() : new Date(b.createdAt);
+                const timeStr = dateObj.toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit' });
+                const dateStr = dateObj.toLocaleDateString('he-IL');
 
                 container.innerHTML += `
-                    <div class="bg-white rounded-[2.5rem] overflow-hidden shadow-sm hover:shadow-2xl transition-all border border-slate-100 flex flex-col h-full">
+                    <div class="bg-white rounded-[2.5rem] overflow-hidden shadow-sm hover:shadow-2xl transition-all border border-slate-100 flex flex-col h-full group">
                         <div class="h-48 bg-slate-50 relative overflow-hidden">
                             ${b.mediaUrl ? `<img src="${b.mediaUrl}" class="w-full h-full object-cover">` : `<div class="w-full h-full flex items-center justify-center text-slate-200 text-4xl"><i class="fas fa-image"></i></div>`}
                             <div class="absolute top-4 right-4 bg-indigo-600 text-white px-3 py-1 rounded-full text-[10px] font-black">${b.category}</div>
+                            
+                            <div class="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition duration-300 gap-3">
+                                <a href="${shareUrl}" target="_blank" title="עיון" class="w-12 h-12 bg-white rounded-full flex items-center justify-center text-indigo-600 shadow-xl hover:scale-110 transition"><i class="fas fa-eye"></i></a>
+                                <button onclick="editBlock('${b.id}')" title="עריכה" class="w-12 h-12 bg-white rounded-full flex items-center justify-center text-amber-500 shadow-xl hover:scale-110 transition"><i class="fas fa-edit"></i></button>
+                                <a href="https://wa.me/?text=${encodeURIComponent('היי, תראה את זה: ' + b.title + ' ' + shareUrl)}" target="_blank" title="שתף בוואצאפ" class="w-12 h-12 bg-green-500 rounded-full flex items-center justify-center text-white shadow-xl hover:scale-110 transition"><i class="fab fa-whatsapp text-xl"></i></a>
+                            </div>
                         </div>
                         <div class="p-7 flex-1 flex flex-col">
-                            <h3 class="font-bold text-slate-800 text-xl mb-2 line-clamp-1">${b.title}</h3>
-                            <p class="text-slate-400 text-sm mb-6 line-clamp-2 h-10">${b.description || 'ללא תיאור'}</p>
+                            <div class="flex justify-between items-start mb-2">
+                                <h3 class="font-bold text-slate-800 text-xl line-clamp-1">${b.title}</h3>
+                            </div>
+                            <p class="text-slate-400 text-sm mb-4 line-clamp-2 h-10">${b.description || 'ללא תיאור'}</p>
+                            
+                            <div class="flex items-center text-[10px] text-slate-300 mb-4 font-bold">
+                                <i class="far fa-clock ml-1"></i> ${timeStr} | ${dateStr}
+                            </div>
+
                             <div class="mt-auto flex gap-3">
                                 <button onclick="copyLink('${shareUrl}', '${safeTitle}')" class="flex-1 py-4 bg-indigo-50 text-indigo-600 rounded-2xl text-xs font-black hover:bg-indigo-600 hover:text-white transition">העתק קישור</button>
                                 <button onclick="deleteB('${b.id}', '${b.mediaUrl}')" class="w-14 bg-red-50 text-red-400 rounded-2xl hover:bg-red-500 hover:text-white transition flex items-center justify-center"><i class="fas fa-trash-alt"></i></button>
@@ -127,58 +158,86 @@
             });
         };
 
-        window.copyLink = (l, title) => {
-            navigator.clipboard.writeText(l);
-            const toast = document.getElementById('toast');
-            toast.innerText = `✅ הקישור ל-"${title}" הועתק!`;
-            toast.className = "show";
-            setTimeout(() => toast.className = "", 3500);
+        window.openModal = (id) => document.getElementById(id).classList.add('active');
+        window.closeModal = (id) => document.getElementById(id).classList.remove('active');
+
+        window.confirmAddCategory = async () => {
+            const name = document.getElementById('newCatName').value;
+            if(name) {
+                await setDoc(doc(db, "categories", name), {});
+                document.getElementById('newCatName').value = '';
+                closeModal('catModal');
+            }
         };
 
-        window.setFilter = (c) => { currentFilter = c; renderCards(); };
-        window.addCategory = async () => {
-            const n = prompt("שם קטגוריה חדשה:");
-            if(n) await setDoc(doc(db, "categories", n), {});
+        window.editBlock = (id) => {
+            const block = blocks.find(b => b.id === id);
+            document.getElementById('title').value = block.title;
+            document.getElementById('catSelect').value = block.category;
+            document.getElementById('url').value = block.url;
+            document.getElementById('desc').value = block.description;
+            document.getElementById('editId').value = id;
+            document.getElementById('formTitle').innerText = "עריכת קובייה";
+            document.getElementById('cancelEditBtn').classList.remove('hidden');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        };
+
+        window.resetForm = () => {
+            document.getElementById('title').value = '';
+            document.getElementById('desc').value = '';
+            document.getElementById('url').value = '';
+            document.getElementById('editId').value = '';
+            document.getElementById('formTitle').innerText = "צור קובייה חדשה";
+            document.getElementById('cancelEditBtn').classList.add('hidden');
+            document.getElementById('fileNameDisplay').innerText = "העלה תמונה";
         };
 
         window.save = async () => {
             const t = document.getElementById('title').value;
-            if(!t) return alert("חובה כותרת!");
+            const editId = document.getElementById('editId').value;
+            if(!t) return alert("חובה כותרת");
             const btn = document.getElementById('saveBtn');
             btn.disabled = true; btn.innerText = "שומר...";
             try {
-                let mUrl = "";
+                let mUrl = editId ? blocks.find(b => b.id === editId).mediaUrl : "";
                 const f = document.getElementById('file').files[0];
                 if(f) {
                     const r = ref(storage, `content/${Date.now()}_${f.name}`);
                     await uploadBytes(r, f);
                     mUrl = await getDownloadURL(r);
                 }
-                await addDoc(collection(db, "blocks"), {
+                const data = {
                     title: t,
                     category: document.getElementById('catSelect').value,
                     url: document.getElementById('url').value,
                     description: document.getElementById('desc').value,
                     mediaUrl: mUrl,
-                    createdAt: new Date()
-                });
-                document.getElementById('title').value = '';
-                document.getElementById('desc').value = '';
-                document.getElementById('file').value = '';
-                document.getElementById('fileNameDisplay').innerText = "העלה תמונה";
-            } catch(e) { alert("שגיאה! וודא שהגדרת Rules ל-True"); }
+                    createdAt: editId ? blocks.find(b => b.id === editId).createdAt : new Date()
+                };
+                if(editId) await updateDoc(doc(db, "blocks", editId), data);
+                else await addDoc(collection(db, "blocks"), data);
+                resetForm();
+            } catch(e) { alert("שגיאה!"); }
             finally { btn.disabled = false; btn.innerText = "שמור קובייה ✨"; }
         };
 
-        window.deleteB = async (id, m) => {
-            if(!confirm("למחוק?")) return;
-            if(m && m.startsWith('http')) await deleteObject(ref(storage, m)).catch(()=>{});
-            await deleteDoc(doc(db, "blocks", id));
+        window.copyLink = (l, title) => {
+            navigator.clipboard.writeText(l);
+            const toast = document.getElementById('toast');
+            toast.innerText = `✅ הקישור ל-"${title}" הועתק!`;
+            toast.className = "show";
+            setTimeout(() => toast.className = "", 3000);
         };
-        
+
+        window.setFilter = (c) => { currentFilter = c; renderCards(); };
+        window.deleteB = async (id, m) => {
+            if(confirm("למחוק?")) {
+                if(m && m.startsWith('http')) await deleteObject(ref(storage, m)).catch(()=>{});
+                await deleteDoc(doc(db, "blocks", id));
+            }
+        };
         document.getElementById('file').onchange = (e) => {
-            const name = e.target.files[0]?.name || "העלה תמונה";
-            document.getElementById('fileNameDisplay').innerText = name;
+            document.getElementById('fileNameDisplay').innerText = e.target.files[0]?.name || "העלה תמונה";
         };
     </script>
 </body>
