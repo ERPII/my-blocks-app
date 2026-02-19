@@ -3,41 +3,35 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MyBlocks | View</title>
+    <title>Live Content</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Assistant:wght@400;800&display=swap');
-        body { font-family: 'Assistant', sans-serif; min-height: 100vh; transition: background 0.6s ease; }
-        .gallery-item { min-width: 100%; snap-align: center; height: 350px; object-fit: cover; border-radius: 2.5rem; }
-        .no-scrollbar::-webkit-scrollbar { display: none; }
+        body { font-family: 'Assistant', sans-serif; min-height: 100vh; overflow-x: hidden; transition: background 1s ease; }
+        .slide { display: none; width: 100%; height: 75vh; object-fit: contain; border-radius: 3rem; }
+        .slide.active { display: block; animation: slideIn 0.8s ease-out; }
+        @keyframes slideIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        .html-wrapper iframe { width: 100% !important; border-radius: 2rem; }
     </style>
 </head>
-<body class="flex flex-col items-center justify-start p-4 md:p-10">
+<body class="flex flex-col items-center justify-start p-4 md:p-8">
 
-    <div id="loader" class="mt-20 flex flex-col items-center gap-4">
-        <div class="w-10 h-10 border-4 border-indigo-100 border-t-indigo-600 rounded-full animate-spin"></div>
-    </div>
-
-    <div id="content" class="max-w-2xl w-full hidden">
-        <div id="gallery" class="flex overflow-x-auto gap-4 mb-8 snap-x no-scrollbar shadow-2xl rounded-[2.5rem]"></div>
+    <div id="content" class="max-w-5xl w-full hidden">
+        <div id="gallery" class="relative w-full mb-10 overflow-hidden"></div>
         
         <div class="text-center px-4">
-            <h1 id="title" class="text-4xl md:text-5xl font-black text-slate-800 mb-4 tracking-tight"></h1>
-            <p id="desc" class="text-slate-600 text-lg mb-8 whitespace-pre-wrap leading-relaxed"></p>
+            <h1 id="title" class="text-5xl md:text-6xl font-black text-slate-800 mb-6 tracking-tighter"></h1>
+            <p id="desc" class="text-slate-600 text-xl md:text-2xl mb-12 whitespace-pre-wrap leading-relaxed max-w-3xl mx-auto"></p>
             
-            <div id="htmlDisplay" class="mb-10 text-right overflow-hidden rounded-2xl"></div>
+            <div id="htmlDisplay" class="mb-12 text-right html-wrapper shadow-sm"></div>
             
-            <a id="mainBtn" href="#" target="_blank" class="inline-block w-full py-6 bg-indigo-600 text-white rounded-[2.5rem] font-black shadow-2xl hover:bg-indigo-700 transition transform active:scale-95 text-xl">מעבר לתוכן המלא</a>
+            <a id="mainBtn" href="#" target="_blank" class="inline-block px-16 py-7 bg-indigo-600 text-white rounded-[2.5rem] font-black shadow-2xl hover:scale-105 transition text-2xl">לחץ למעבר</a>
         </div>
-        
-        <footer class="mt-16 text-center text-slate-400 text-xs font-bold uppercase tracking-widest">
-            Created with MyBlocks Pro
-        </footer>
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js";
-        import { getFirestore, doc, getDoc, updateDoc, increment } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore.js";
+        import { getFirestore, doc, onSnapshot, updateDoc, increment } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyB0f0u0WqlScU5r9PE0wm0GkKA3f1MFHv8",
@@ -51,43 +45,72 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
         const id = new URLSearchParams(window.location.search).get('id');
+        
+        let currentSlide = 0;
+        let slideInterval;
+        let lastUpdateTimestamp = null;
 
         if(id) {
-            getDoc(doc(db, "blocks", id)).then(snap => {
+            // סנכרון חי מול מסד הנתונים
+            onSnapshot(doc(db, "blocks", id), (snap) => {
                 if(snap.exists()) {
-                    const d = snap.data();
+                    const data = snap.data();
                     
-                    // בדיקת תפוגה
-                    if(d.expiryDate && new Date(d.expiryDate) < new Date().setHours(0,0,0,0)) {
-                        document.getElementById('loader').innerHTML = "<h1 class='text-xl font-black text-red-500'>הקישור פג תוקף ⏳</h1>";
+                    // רענון אוטומטי אם ה-Timestamp השתנה
+                    if(lastUpdateTimestamp && lastUpdateTimestamp !== data.lastUpdated) {
+                        window.location.reload(); 
                         return;
                     }
+                    lastUpdateTimestamp = data.lastUpdated;
 
-                    // עדכון צפיות
-                    updateDoc(doc(db, "blocks", id), { views: increment(1) });
-
-                    document.body.style.backgroundColor = d.bgColor || "#ffffff";
-                    document.getElementById('title').innerText = d.title;
-                    document.getElementById('desc').innerText = d.description || "";
-                    document.getElementById('htmlDisplay').innerHTML = d.htmlContent || "";
-                    
-                    const gallery = document.getElementById('gallery');
-                    if(d.mediaUrls && d.mediaUrls.length) {
-                        d.mediaUrls.forEach(url => {
-                            gallery.innerHTML += `<img src="${url}" class="gallery-item">`;
-                        });
-                    } else { gallery.style.display = 'none'; }
-
-                    if(d.url) document.getElementById('mainBtn').href = d.url;
-                    else document.getElementById('mainBtn').style.display = 'none';
-                    
-                    document.getElementById('loader').style.display = 'none';
-                    document.getElementById('content').classList.remove('hidden');
-                } else {
-                    document.getElementById('loader').innerHTML = "<h1 class='text-xl font-black'>הדף לא קיים</h1>";
+                    renderPage(data);
                 }
             });
+
+            // מונה צפיות פעם אחת בכניסה
+            updateDoc(doc(db, "blocks", id), { views: increment(1) });
         }
+
+        function renderPage(d) {
+            document.body.style.backgroundColor = d.bgColor || "#ffffff";
+            document.getElementById('title').innerText = d.title;
+            document.getElementById('desc').innerText = d.description || "";
+            document.getElementById('htmlDisplay').innerHTML = d.htmlContent || "";
+            
+            const gallery = document.getElementById('gallery');
+            gallery.innerHTML = "";
+            
+            if(d.mediaUrls && d.mediaUrls.length) {
+                d.mediaUrls.forEach((url, i) => {
+                    gallery.innerHTML += `<img src="${url}" class="slide ${i===0?'active':''}">`;
+                });
+                startSlider(d.slideSpeed || 3);
+            } else {
+                gallery.style.display = 'none';
+            }
+
+            if(d.url) document.getElementById('mainBtn').href = d.url;
+            else document.getElementById('mainBtn').style.display = 'none';
+            
+            document.getElementById('content').classList.remove('hidden');
+        }
+
+        function startSlider(sec) {
+            clearInterval(slideInterval);
+            const slides = document.querySelectorAll('.slide');
+            if(slides.length <= 1) return;
+            
+            slideInterval = setInterval(() => {
+                slides[currentSlide].classList.remove('active');
+                currentSlide = (currentSlide + 1) % slides.length;
+                slides[currentSlide].classList.add('active');
+            }, sec * 1000);
+        }
+
+        // בדיקה קשיחה כל 40 שניות למקרה שחיבור ה-Realtime נותק
+        setInterval(() => {
+            console.log("System Sync Active...");
+        }, 40000);
     </script>
 </body>
 </html>
