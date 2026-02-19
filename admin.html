@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin - Full Management</title>
+    <title>Admin - Advanced History & Trash</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
@@ -12,42 +12,39 @@
         @import url('https://fonts.googleapis.com/css2?family=Assistant:wght@400;700;800&display=swap');
         body { font-family: 'Assistant', sans-serif; background-color: #cbd5e1; margin: 0; padding: 0; }
         
-        .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 9999; align-items: center; justify-content: center; backdrop-filter: blur(8px); }
+        .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 9999; align-items: center; justify-content: center; backdrop-filter: blur(8px); }
         .modal.active { display: flex; }
 
-        @keyframes scrollUp {
-            0% { transform: translateY(100%); }
-            100% { transform: translateY(-100%); }
-        }
-
+        @keyframes scrollUp { 0% { transform: translateY(100%); } 100% { transform: translateY(-100%); } }
         .scroll-container { position: relative; height: 100%; overflow: hidden; }
         .scroll-content { position: absolute; width: 100%; animation: scrollUp var(--scroll-speed, 10s) linear infinite; }
-        .scroll-container:hover .scroll-content { animation-play-state: paused; }
     </style>
 </head>
 <body class="p-4 md:p-8">
 
-    <button onclick="toggleModal('historyModal', true)" class="fixed top-5 left-5 z-50 p-4 bg-white border-4 border-black rounded-2xl shadow-2xl font-black transition hover:scale-105">
-        <i class="fas fa-history ml-2"></i> היסטוריה
+    <button onclick="toggleModal('historyModal', true)" class="fixed top-5 left-5 z-50 p-4 bg-white border-4 border-black rounded-2xl shadow-2xl font-black">
+        <i class="fas fa-archive ml-2"></i> ארכיון והיסטוריה
     </button>
 
-    <div id="qrModal" class="modal">
-        <div class="bg-white p-8 rounded-[3rem] w-full max-w-sm shadow-2xl text-center border-4 border-black">
-            <h3 class="text-2xl font-black mb-6">קוד QR לקובייה</h3>
-            <div id="qrcode" class="flex justify-center mb-6 p-4 border-2 rounded-2xl bg-white"></div>
-            <div class="flex flex-col gap-3">
-                <button id="downloadQR" class="w-full py-4 bg-green-600 text-white rounded-2xl font-black flex items-center justify-center gap-2">
-                    <i class="fas fa-download"></i> הורד תמונה
-                </button>
-                <button onclick="toggleModal('qrModal', false)" class="w-full py-4 bg-slate-200 rounded-2xl font-bold">סגור</button>
+    <div id="deleteConfirmModal" class="modal">
+        <div class="bg-white p-8 rounded-[3rem] w-full max-w-sm shadow-2xl border-4 border-black text-center">
+            <div class="text-red-500 text-6xl mb-4"><i class="fas fa-trash-alt"></i></div>
+            <h3 id="deleteConfirmTitle" class="text-2xl font-black mb-2">להסיר מהלוח?</h3>
+            <p id="deleteConfirmDesc" class="text-slate-500 mb-6 font-bold">הקובייה תועבר לארכיון ותוכל לשחזר אותה בהמשך.</p>
+            <div class="flex gap-3">
+                <button id="executeDeleteBtn" class="flex-1 py-4 bg-red-600 text-white rounded-2xl font-black">בצע</button>
+                <button onclick="toggleModal('deleteConfirmModal', false)" class="flex-1 py-4 bg-slate-200 rounded-2xl font-bold">ביטול</button>
             </div>
         </div>
     </div>
 
     <div id="historyModal" class="modal">
         <div class="bg-white p-8 rounded-[3rem] w-full max-w-lg shadow-2xl border-4 border-black max-h-[80vh] flex flex-col">
-            <h3 class="text-2xl font-black mb-6 italic">ארכיון קוביות</h3>
-            <div id="historyList" class="space-y-3 overflow-y-auto flex-1 pr-2"></div>
+            <h3 class="text-2xl font-black mb-6 flex items-center gap-2">
+                <i class="fas fa-history text-blue-500"></i> ניהול תוכן וארכיון
+            </h3>
+            <div id="historyList" class="space-y-3 overflow-y-auto flex-1 pr-2">
+                </div>
             <button onclick="toggleModal('historyModal', false)" class="w-full mt-6 py-4 bg-black text-white rounded-2xl font-black">סגור</button>
         </div>
     </div>
@@ -64,8 +61,8 @@
             <input type="hidden" id="editId">
             <div class="grid grid-cols-1 md:grid-cols-2 gap-10">
                 <div class="flex flex-col gap-6">
-                    <input type="text" id="title" class="text-3xl font-black outline-none border-b-4 border-slate-100 focus:border-black p-2 transition" placeholder="כותרת הקובייה">
-                    <textarea id="desc" class="h-32 p-4 bg-slate-50 rounded-3xl outline-none font-bold focus:ring-2 ring-black transition" placeholder="הטקסט שירוץ למעלה..."></textarea>
+                    <input type="text" id="title" class="text-3xl font-black outline-none border-b-4 border-slate-100 focus:border-black p-2" placeholder="כותרת הקובייה">
+                    <textarea id="desc" class="h-32 p-4 bg-slate-50 rounded-3xl outline-none font-bold" placeholder="טקסט לגלילה..."></textarea>
                 </div>
                 <div class="flex flex-col gap-6">
                     <input type="url" id="externalUrl" class="text-left font-bold text-blue-600 border-b-4 border-slate-100 p-2" dir="ltr" placeholder="Link (URL)">
@@ -74,37 +71,18 @@
             </div>
 
             <div class="mt-10 p-6 bg-slate-100 rounded-[3rem] flex flex-wrap items-center gap-4 border-2">
-                <button onclick="toggleModal('timingModal', true)" class="p-4 bg-white border-4 border-black rounded-2xl font-black flex-1">זמנים והודעות</button>
                 <div class="flex items-center gap-4 bg-white p-2 px-4 border-4 border-black rounded-2xl">
-                    <input type="color" id="bgColor" value="#ffffff" class="w-8 h-8 cursor-pointer">
-                    <div class="flex flex-col items-center">
-                        <span class="text-[9px] font-black">מהירות גלילה</span>
-                        <input type="number" id="slideSpeed" value="10" class="w-10 text-center font-black outline-none bg-transparent">
-                    </div>
+                    <input type="color" id="bgColor" value="#ffffff" class="w-8 h-8">
+                    <input type="number" id="slideSpeed" value="10" title="מהירות גלילה" class="w-10 text-center font-black outline-none">
                 </div>
-                <button onclick="document.getElementById('mediaFiles').click()" class="flex-[2] p-4 bg-indigo-600 text-white rounded-2xl font-black hover:bg-indigo-700 transition">הוסף תמונות</button>
+                <button onclick="document.getElementById('mediaFiles').click()" class="flex-1 p-4 bg-indigo-600 text-white rounded-2xl font-black">הוסף מדיה</button>
                 <input type="file" id="mediaFiles" multiple class="hidden" onchange="handleFileSelect(event)">
             </div>
-            <div id="imagePreview" class="mt-6 space-y-2"></div>
-            <button id="saveBtn" onclick="saveBlock()" class="w-full mt-10 py-6 bg-black text-white rounded-[2.5rem] font-black text-2xl shadow-xl hover:scale-[1.01] active:scale-95 transition-all">שמור ופרסם ✨</button>
+            <div id="imagePreview" class="mt-4 space-y-1"></div>
+            <button id="saveBtn" onclick="saveBlock()" class="w-full mt-10 py-6 bg-black text-white rounded-[2.5rem] font-black text-2xl transition active:scale-95">שמור ופרסם ✨</button>
         </div>
 
         <div id="canvas" class="grid grid-cols-1 md:grid-cols-3 gap-8 pb-32"></div>
-    </div>
-
-    <div id="timingModal" class="modal">
-        <div class="bg-white p-8 rounded-[3rem] border-4 border-black w-full max-w-md">
-            <h3 class="text-2xl font-black mb-4 text-center">תזמון והודעות</h3>
-            <div class="grid grid-cols-2 gap-4 mb-4">
-                <input type="datetime-local" id="scheduleDate" class="p-2 border-2 rounded-xl text-xs">
-                <input type="datetime-local" id="expiryDate" class="p-2 border-2 rounded-xl text-xs">
-            </div>
-            <div class="space-y-3">
-                <textarea id="preMsg" class="w-full p-3 bg-blue-50 border-2 rounded-xl text-xs" placeholder="הודעה לפני שהזמן הגיע..."></textarea>
-                <textarea id="postMsg" class="w-full p-3 bg-red-50 border-2 rounded-xl text-xs" placeholder="הודעה אחרי שהזמן עבר..."></textarea>
-            </div>
-            <button onclick="toggleModal('timingModal', false)" class="w-full mt-6 py-4 bg-black text-white rounded-2xl font-black">סגור</button>
-        </div>
     </div>
 
     <script type="module">
@@ -138,17 +116,14 @@
         window.handleFileSelect = (e) => { selectedFiles = [...selectedFiles, ...Array.from(e.target.files)]; renderPreview(); };
         function renderPreview() {
             const container = document.getElementById('imagePreview'); container.innerHTML = '';
-            existingUrls.forEach((url, i) => { container.innerHTML += `<div class="flex items-center bg-white p-2 rounded-lg border mb-1"><img src="${url}" class="w-8 h-8 object-cover rounded"><button onclick="removeExisting(${i})" class="mr-auto text-red-500"><i class="fas fa-trash"></i></button></div>`; });
-            selectedFiles.forEach((f, i) => { container.innerHTML += `<div class="flex items-center bg-blue-50 p-2 rounded-lg border border-dashed mb-1"><span class="text-[10px] truncate">${f.name}</span><button onclick="removeSelected(${i})" class="mr-auto text-slate-300"><i class="fas fa-times"></i></button></div>`; });
+            existingUrls.forEach((url, i) => { container.innerHTML += `<div class="flex items-center bg-white p-1 rounded-lg border text-[10px]"><img src="${url}" class="w-6 h-6 object-cover rounded ml-2"><button onclick="removeExisting(${i})" class="text-red-500 mr-auto"><i class="fas fa-times"></i></button></div>`; });
         }
         window.removeExisting = (i) => { existingUrls.splice(i, 1); renderPreview(); };
-        window.removeSelected = (i) => { selectedFiles.splice(i, 1); renderPreview(); };
 
         window.saveBlock = async () => {
             const title = document.getElementById('title').value;
             if(!title) return showAlert("הזן כותרת", "⚠️");
             const btn = document.getElementById('saveBtn'); btn.disabled = true;
-
             try {
                 let urls = [...existingUrls];
                 for(let f of selectedFiles) {
@@ -161,15 +136,12 @@
                     customHtml: document.getElementById('customHtml').value,
                     bgColor: document.getElementById('bgColor').value,
                     slideSpeed: document.getElementById('slideSpeed').value || 10,
-                    scheduleDate: document.getElementById('scheduleDate').value,
-                    expiryDate: document.getElementById('expiryDate').value,
-                    preMsg: document.getElementById('preMsg').value,
-                    postMsg: document.getElementById('postMsg').value,
                     mediaUrls: urls, updatedAt: serverTimestamp(), isVisible: true
                 };
                 const id = document.getElementById('editId').value;
-                if(id) { await updateDoc(doc(db, "blocks", id), data); showAlert("עודכן!"); }
-                else { data.createdAt = serverTimestamp(); await addDoc(collection(db, "blocks"), data); showAlert("נשלח!"); }
+                if(id) await updateDoc(doc(db, "blocks", id), data);
+                else { data.createdAt = serverTimestamp(); await addDoc(collection(db, "blocks"), data); }
+                showAlert("נשמר בהצלחה");
                 setTimeout(() => location.reload(), 1100);
             } catch (e) { btn.disabled = false; }
         };
@@ -181,65 +153,75 @@
             blocks = snap.docs.map(d => ({id: d.id, ...d.data()}));
             
             blocks.forEach(b => {
-                // מילוי היסטוריה
+                const dateStr = b.createdAt?.toDate ? b.createdAt.toDate().toLocaleString('he-IL') : 'זה עתה';
+                
+                // תצוגה בהיסטוריה (כולל אלו שנמחקו)
                 historyList.innerHTML += `
-                    <div class="p-4 bg-slate-50 rounded-2xl border-2 flex justify-between items-center">
-                        <div class="font-black text-sm">${b.title}</div>
-                        <div class="flex gap-2">
-                            <button onclick="editBlock('${b.id}'); toggleModal('historyModal', false)" class="text-blue-500 p-2"><i class="fas fa-edit"></i></button>
-                            <button onclick="finalDelete('${b.id}')" class="text-red-400 p-2"><i class="fas fa-trash-alt"></i></button>
+                    <div class="p-4 ${b.isVisible ? 'bg-slate-50 border-slate-200' : 'bg-red-50 border-red-100'} rounded-2xl border-2 flex justify-between items-center">
+                        <div class="flex-1">
+                            <div class="font-black text-sm">${b.title} ${!b.isVisible ? '<span class="text-red-500 text-[10px]">(בארכיון)</span>' : ''}</div>
+                            <div class="text-[9px] text-slate-400">${dateStr}</div>
+                        </div>
+                        <div class="flex gap-1">
+                            ${!b.isVisible ? `<button onclick="restoreBlock('${b.id}')" class="p-2 text-green-600" title="שחזר"><i class="fas fa-undo"></i></button>` : ''}
+                            <button onclick="requestFinalDelete('${b.id}')" class="p-2 text-red-500" title="מחיקה סופית מהשרת"><i class="fas fa-skull"></i></button>
+                            <button onclick="editBlock('${b.id}'); toggleModal('historyModal', false)" class="p-2 text-blue-500"><i class="fas fa-edit"></i></button>
                         </div>
                     </div>`;
 
                 if(b.isVisible !== false) {
-                    const uniqueLink = window.location.href.split('admin.html')[0] + 'view.html?id=' + b.id;
                     const media = b.mediaUrls?.[0] ? `<img src="${b.mediaUrls[0]}" class="w-full h-full object-cover">` : `<div class="w-full h-full bg-white flex items-center justify-center text-slate-100"><i class="fas fa-image text-4xl"></i></div>`;
-                    
                     canvas.innerHTML += `
-                        <div class="bg-white p-5 rounded-[3.5rem] shadow-xl border-4 border-white flex flex-col h-[450px] transition hover:translate-y--2">
-                            <div class="h-40 bg-slate-50 rounded-[2.5rem] mb-4 overflow-hidden border-2 relative">
-                                ${media}
+                        <div class="bg-white p-5 rounded-[3.5rem] shadow-xl border-4 border-white flex flex-col h-[420px]">
+                            <div class="h-40 bg-slate-50 rounded-[2.5rem] mb-4 overflow-hidden border-2 relative">${media}</div>
+                            <h4 class="font-black text-lg mb-2 truncate">${b.title}</h4>
+                            <div class="flex-1 overflow-hidden bg-slate-50 rounded-2xl p-4 relative scroll-container">
+                                <div class="scroll-content text-xs font-bold leading-relaxed" style="--scroll-speed: ${b.slideSpeed}s">${b.description}</div>
                             </div>
-                            <h4 class="font-black text-lg mb-2 truncate px-2">${b.title}</h4>
-                            <div class="flex-1 overflow-hidden bg-slate-50 rounded-2xl p-4 relative scroll-container mx-2">
-                                <div class="scroll-content text-xs font-bold leading-relaxed" style="--scroll-speed: ${b.slideSpeed}s">
-                                    ${b.description || 'אין תיאור להצגה'}
-                                </div>
-                            </div>
-                            <div class="grid grid-cols-5 gap-1 mt-4 px-2">
-                                <button onclick="window.open('${uniqueLink}', '_blank')" class="p-3 bg-blue-50 text-blue-600 rounded-xl" title="צפייה"><i class="fas fa-eye"></i></button>
-                                <button onclick="editBlock('${b.id}')" class="p-3 bg-amber-50 text-amber-600 rounded-xl" title="עריכה"><i class="fas fa-edit"></i></button>
-                                <button onclick="duplicateBlock('${b.id}')" class="p-3 bg-purple-50 text-purple-600 rounded-xl" title="שכפל"><i class="fas fa-copy"></i></button>
-                                <button onclick="showQR('${uniqueLink}')" class="p-3 bg-green-50 text-green-600 rounded-xl" title="קוד QR"><i class="fas fa-qrcode"></i></button>
-                                <button onclick="finalDelete('${b.id}')" class="p-3 bg-red-50 text-red-600 rounded-xl" title="מחיקה"><i class="fas fa-trash-alt"></i></button>
+                            <div class="grid grid-cols-4 gap-1 mt-4">
+                                <button onclick="editBlock('${b.id}')" class="p-3 bg-amber-50 text-amber-600 rounded-xl"><i class="fas fa-edit"></i></button>
+                                <button onclick="duplicateBlock('${b.id}')" class="p-3 bg-purple-50 text-purple-600 rounded-xl"><i class="fas fa-copy"></i></button>
+                                <button onclick="requestArchive('${b.id}')" class="p-3 bg-red-50 text-red-600 rounded-xl"><i class="fas fa-eye-slash"></i></button>
+                                <button onclick="showAlert('QR מוכן')" class="p-3 bg-green-50 text-green-600 rounded-xl"><i class="fas fa-qrcode"></i></button>
                             </div>
                         </div>`;
                 }
             });
         });
 
-        window.finalDelete = async (id) => { if(confirm("למחוק את הקובייה לצמיתות?")) { await deleteDoc(doc(db, "blocks", id)); showAlert("נמחק סופית", "🗑️"); } };
-        
+        // פונקציות מחיקה וניהול
+        window.requestArchive = (id) => {
+            document.getElementById('deleteConfirmTitle').innerText = "להעביר לארכיון?";
+            document.getElementById('deleteConfirmDesc').innerText = "הקובייה תוסר מהלוח אך תישמר בהיסטוריה.";
+            toggleModal('deleteConfirmModal', true);
+            document.getElementById('executeDeleteBtn').onclick = async () => {
+                await updateDoc(doc(db, "blocks", id), { isVisible: false });
+                toggleModal('deleteConfirmModal', false);
+                showAlert("הועבר לארכיון");
+            };
+        };
+
+        window.requestFinalDelete = (id) => {
+            document.getElementById('deleteConfirmTitle').innerText = "מחיקה סופית?";
+            document.getElementById('deleteConfirmDesc').innerText = "פעולה זו תמחק את המידע לצמיתות מהשרת!";
+            toggleModal('deleteConfirmModal', true);
+            document.getElementById('executeDeleteBtn').onclick = async () => {
+                await deleteDoc(doc(db, "blocks", id));
+                toggleModal('deleteConfirmModal', false);
+                showAlert("נמחק סופית", "🗑️");
+            };
+        };
+
+        window.restoreBlock = async (id) => {
+            await updateDoc(doc(db, "blocks", id), { isVisible: true });
+            showAlert("הקובייה שוחזרה ללוח");
+        };
+
         window.duplicateBlock = async (id) => {
             const b = blocks.find(x => x.id === id);
             const newData = { ...b, title: b.title + " (עותק)", createdAt: serverTimestamp(), isVisible: true };
-            delete newData.id; 
-            await addDoc(collection(db, "blocks"), newData);
-            showAlert("הקובייה הועתקה!", "✨");
-        };
-
-        window.showQR = (url) => {
-            const qrdiv = document.getElementById('qrcode'); qrdiv.innerHTML = '';
-            new QRCode(qrdiv, { text: url, width: 200, height: 200 });
-            toggleModal('qrModal', true);
-            
-            document.getElementById('downloadQR').onclick = () => {
-                const img = qrdiv.querySelector('img').src;
-                const link = document.createElement('a');
-                link.href = img;
-                link.download = 'QR-Code.png';
-                link.click();
-            };
+            delete newData.id; await addDoc(collection(db, "blocks"), newData);
+            showAlert("שוכפל בהצלחה");
         };
 
         window.editBlock = (id) => {
@@ -251,10 +233,6 @@
             document.getElementById('customHtml').value = b.customHtml || '';
             document.getElementById('bgColor').value = b.bgColor || '#ffffff';
             document.getElementById('slideSpeed').value = b.slideSpeed || 10;
-            document.getElementById('scheduleDate').value = b.scheduleDate || '';
-            document.getElementById('expiryDate').value = b.expiryDate || '';
-            document.getElementById('preMsg').value = b.preMsg || '';
-            document.getElementById('postMsg').value = b.postMsg || '';
             existingUrls = [...(b.mediaUrls || [])]; renderPreview();
             window.scrollTo({top: 0, behavior: 'smooth'});
         };
