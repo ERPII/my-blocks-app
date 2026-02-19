@@ -7,15 +7,14 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Assistant:wght@400;800&display=swap');
-        body { font-family: 'Assistant', sans-serif; transition: background 1s ease; }
+        body { font-family: 'Assistant', sans-serif; transition: background 0.5s ease; }
         .media-item { display: none; width: 100%; max-height: 60vh; object-fit: contain; border-radius: 2.5rem; }
-        .media-item.active { display: block; animation: fadeIn 0.8s ease; }
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        .media-item.active { display: block; }
     </style>
 </head>
 <body class="min-h-screen flex flex-col items-center justify-center p-6">
 
-    <div id="statusBox" class="hidden text-center p-12 bg-white shadow-2xl rounded-[3rem] max-w-2xl border-b-8">
+    <div id="statusBox" class="hidden text-center p-12 bg-white shadow-2xl rounded-[3rem] border-b-8 border-indigo-600 max-w-xl">
         <h1 id="statusText" class="text-3xl font-black"></h1>
     </div>
 
@@ -24,28 +23,25 @@
         <h1 id="title" class="text-5xl font-black mb-4"></h1>
         <p id="desc" class="text-xl text-slate-700 mb-8"></p>
         <div id="customHtmlBox" class="my-6"></div>
-        <a id="mainLink" href="#" target="_blank" class="inline-block px-12 py-5 bg-indigo-600 text-white rounded-[2rem] font-bold text-2xl shadow-xl">לחץ כאן</a>
+        <a id="mainLink" href="#" target="_blank" class="inline-block px-12 py-5 bg-indigo-600 text-white rounded-[2rem] font-bold text-2xl shadow-xl hover:scale-105 transition">מעבר לקישור</a>
     </div>
-
-    <footer id="footer" class="fixed bottom-6 text-slate-400 font-bold"></footer>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js";
         import { getFirestore, doc, onSnapshot, updateDoc, increment } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore.js";
 
-        const firebaseConfig = { /* אותו הקוד */ };
+        const firebaseConfig = {
+            apiKey: "AIzaSyB0f0u0WqlScU5r9PE0wm0GkKA3f1MFHv8",
+            authDomain: "myblocksapp-a7d1c.firebaseapp.com",
+            projectId: "myblocksapp-a7d1c",
+            storageBucket: "myblocksapp-a7d1c.firebasestorage.app",
+            messagingSenderId: "273089143135",
+            appId: "1:273089143135:web:7544f1810bc21b4a5856ea"
+        };
+
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
         const id = new URLSearchParams(window.location.search).get('id');
-
-        // טעינת הגדרות פוטר וצבעים
-        onSnapshot(doc(db, "settings", "general"), snap => {
-            if(snap.exists()){
-                const d = snap.data();
-                document.getElementById('footer').innerText = d.footerText;
-                document.getElementById('statusBox').style.borderColor = d.brandColor;
-            }
-        });
 
         if(id) {
             updateDoc(doc(db, "blocks", id), { views: increment(1) });
@@ -56,44 +52,40 @@
                     const start = d.scheduleDate ? new Date(d.scheduleDate) : null;
                     const end = d.expiryDate ? new Date(d.expiryDate) : null;
 
-                    if(start && now < start) showStatus(d.preMsg || "בקרוב...");
-                    else if(end && now > end) showStatus(d.postMsg || "נגמר.");
-                    else render(d);
+                    if(start && now < start) {
+                        document.getElementById('statusBox').classList.remove('hidden');
+                        document.getElementById('statusText').innerText = d.preMsg || "התוכן יעלה בקרוב...";
+                    } else if(end && now > end) {
+                        document.getElementById('statusBox').classList.remove('hidden');
+                        document.getElementById('statusText').innerText = d.postMsg || "פג תוקף.";
+                    } else {
+                        document.getElementById('content').classList.remove('hidden');
+                        document.body.style.backgroundColor = d.bgColor;
+                        document.getElementById('title').innerText = d.title;
+                        document.getElementById('desc').innerText = d.description;
+                        document.getElementById('customHtmlBox').innerHTML = d.customHtml || '';
+                        
+                        const box = document.getElementById('mediaBox'); box.innerHTML = '';
+                        (d.mediaUrls || []).forEach((u, i) => {
+                            const img = document.createElement('img');
+                            img.src = u; img.className = `media-item ${i===0?'active':''}`;
+                            box.appendChild(img);
+                        });
+                        if(d.url) document.getElementById('mainLink').href = d.url;
+                        else document.getElementById('mainLink').style.display = 'none';
+
+                        if(d.mediaUrls?.length > 1) {
+                            let idx = 0;
+                            setInterval(() => {
+                                const items = document.querySelectorAll('.media-item');
+                                items[idx].classList.remove('active');
+                                idx = (idx + 1) % items.length;
+                                items[idx].classList.add('active');
+                            }, 3000);
+                        }
+                    }
                 }
             });
-        }
-
-        function showStatus(m) {
-            document.getElementById('statusBox').classList.remove('hidden');
-            document.getElementById('statusText').innerText = m;
-        }
-
-        function render(d) {
-            document.getElementById('content').classList.remove('hidden');
-            document.body.style.backgroundColor = d.bgColor;
-            document.getElementById('title').innerText = d.title;
-            document.getElementById('desc').innerText = d.description;
-            document.getElementById('customHtmlBox').innerHTML = d.customHtml || '';
-            
-            const box = document.getElementById('mediaBox'); box.innerHTML = '';
-            (d.mediaUrls || []).forEach((u, i) => {
-                const img = document.createElement('img');
-                img.src = u; img.className = `media-item ${i===0?'active':''}`;
-                box.appendChild(img);
-            });
-            
-            if(d.url) document.getElementById('mainLink').href = d.url;
-            else document.getElementById('mainLink').style.display = 'none';
-
-            if(d.mediaUrls?.length > 1) {
-                let idx = 0;
-                setInterval(() => {
-                    const items = document.querySelectorAll('.media-item');
-                    items[idx].classList.remove('active');
-                    idx = (idx + 1) % items.length;
-                    items[idx].classList.add('active');
-                }, 3000);
-            }
         }
     </script>
 </body>
