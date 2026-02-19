@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>הגדרות מערכת | MyBlocks</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Assistant:wght@400;800&display=swap');
+        body { font-family: 'Assistant', sans-serif; background: #f8fafc; }
+        /* עיצוב שדות קלט כהים */
+        .input-dark { 
+            @apply w-full p-4 border-2 border-slate-700 rounded-2xl font-bold bg-white focus:border-indigo-600 outline-none transition-all; 
+        }
+    </style>
+</head>
+<body class="p-4 md:p-10">
+
+    <div class="max-w-4xl mx-auto">
+        <div class="flex justify-between items-center mb-10">
+            <h1 class="text-3xl font-black text-slate-800">הגדרות מותג</h1>
+            <a href="admin.html" class="bg-indigo-600 text-white px-8 py-3 rounded-2xl font-black shadow-lg hover:bg-indigo-700 transition">
+                <i class="fas fa-th-large ml-2"></i> ניהול קוביות
+            </a>
+        </div>
+
+        <div class="bg-white p-8 rounded-[3rem] shadow-2xl border-2 border-slate-100">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+                
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-black text-slate-500 mb-2">שם המערכת (יופיע למעלה):</label>
+                        <input type="text" id="appName" class="input-dark" placeholder="למשל: MyBlocks Pro">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-black text-slate-500 mb-2">טקסט תחתון (Footer):</label>
+                        <input type="text" id="footerText" class="input-dark" placeholder="© 2026 כל הזכויות שמורות">
+                    </div>
+                </div>
+
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-black text-slate-500 mb-2">צבע מותג ראשי:</label>
+                        <input type="color" id="brandColor" class="w-full h-14 border-2 border-slate-700 rounded-2xl cursor-pointer p-1 bg-white">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-black text-slate-500 mb-2">קישור ללוגו (URL):</label>
+                        <input type="url" id="logoUrl" class="input-dark text-left" dir="ltr" placeholder="https://...">
+                    </div>
+                </div>
+            </div>
+
+            <button onclick="saveSettings()" id="saveBtn" class="w-full bg-slate-900 text-white py-6 rounded-[2rem] font-black text-2xl hover:bg-black transition-all transform active:scale-95 shadow-xl">
+                שמור הגדרות מותג ✨
+            </button>
+        </div>
+    </div>
+
+    <script type="module">
+        // ייבוא פונקציות מ-Firebase
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js";
+        import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore.js";
+
+        // הגדרות Firebase שלך - וודא שהן נכונות
+        const firebaseConfig = {
+            apiKey: "AIzaSyB0f0u0WqlScU5r9PE0wm0GkKA3f1MFHv8",
+            authDomain: "myblocksapp-a7d1c.firebaseapp.com",
+            projectId: "myblocksapp-a7d1c",
+            storageBucket: "myblocksapp-a7d1c.firebasestorage.app",
+            messagingSenderId: "273089143135",
+            appId: "1:273089143135:web:7544f1810bc21b4a5856ea"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        // פונקציה שטוענת את הנתונים מהמסד ברגע שהדף נפתח
+        onSnapshot(doc(db, "settings", "general"), (snap) => {
+            if(snap.exists()){
+                const d = snap.data();
+                // עדכון שדות הקלט בערכים השמורים
+                document.getElementById('appName').value = d.appName || '';
+                document.getElementById('footerText').value = d.footerText || '';
+                document.getElementById('brandColor').value = d.brandColor || '#4f46e5';
+                document.getElementById('logoUrl').value = d.logoUrl || '';
+            }
+        });
+
+        // פונקציית שמירה
+        window.saveSettings = async () => {
+            const btn = document.getElementById('saveBtn');
+            btn.disabled = true; btn.innerText = "שומר..."; // שינוי טקסט בכפתור בזמן עבודה
+
+            try {
+                // שמירה לתוך מסמך אחד קבוע שנקרא general בתוך אוסף settings
+                await setDoc(doc(db, "settings", "general"), {
+                    appName: document.getElementById('appName').value,
+                    footerText: document.getElementById('footerText').value,
+                    brandColor: document.getElementById('brandColor').value,
+                    logoUrl: document.getElementById('logoUrl').value,
+                    updatedAt: Date.now()
+                });
+                alert("ההגדרות עודכנו בהצלחה!");
+            } catch (e) {
+                alert("שגיאה בשמירה: " + e.message);
+            } finally {
+                btn.disabled = false; btn.innerText = "שמור הגדרות מותג ✨";
+            }
+        };
+    </script>
+</body>
+</html>
