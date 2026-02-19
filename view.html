@@ -3,32 +3,49 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>View Mode - Auto Refresh</title>
+    <title>View Mode - Smart Slider</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Assistant:wght@400;700;800&display=swap');
         body { font-family: 'Assistant', sans-serif; background-color: #000; color: white; margin: 0; overflow: hidden; }
         
-        /* אנימציית גלילה */
+        /* אנימציה מוגדרת מראש, אך נפעיל אותה רק במידת הצורך */
         @keyframes scrollUp {
-            0% { transform: translateY(100vh); }
+            0% { transform: translateY(100%); }
             100% { transform: translateY(-100%); }
         }
-        .scroll-content {
+
+        .should-scroll {
             animation: scrollUp var(--speed, 15s) linear infinite;
         }
+
+        .scroll-container {
+            height: 100%;
+            width: 100%;
+            overflow: hidden;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .scroll-content {
+            position: relative;
+            width: 100%;
+            text-align: center;
+            transition: transform 0.3s ease;
+        }
+
         .full-screen-msg {
             display: flex; align-items: center; justify-content: center;
             height: 100vh; width: 100vw; text-align: center; padding: 2rem;
-            font-size: 3rem; font-weight: 800; background: #111;
+            font-size: 3.5rem; font-weight: 800; background: #000;
         }
     </style>
 </head>
 <body>
 
-    <div id="displayContainer">
-        <div class="full-screen-msg text-slate-500">טוען נתונים...</div>
-    </div>
+    <div id="displayContainer"></div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js";
@@ -46,21 +63,19 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
-        // שליפת ה-ID מהכתובת
         const params = new URLSearchParams(window.location.search);
         const blockId = params.get('id');
         let blockData = null;
 
         if (!blockId) {
-            document.getElementById('displayContainer').innerHTML = `<div class="full-screen-msg">שגיאה: קוד לא נמצא</div>`;
+            document.getElementById('displayContainer').innerHTML = `<div class="full-screen-msg">שגיאה: ID חסר</div>`;
         } else {
-            // האזנה לשינויים ב-DB (זמן אמת)
             onSnapshot(doc(db, "blocks", blockId), (snap) => {
                 if (snap.exists()) {
                     blockData = snap.data();
-                    renderContent(); // רינדור ראשוני
+                    renderContent();
                 } else {
-                    document.getElementById('displayContainer').innerHTML = `<div class="full-screen-msg">התוכן נמחק על ידי המנהל</div>`;
+                    document.getElementById('displayContainer').innerHTML = `<div class="full-screen-msg text-slate-700">התוכן אינו זמין יותר</div>`;
                 }
             });
         }
@@ -73,41 +88,61 @@
             const end = blockData.expiryDate ? new Date(blockData.expiryDate) : null;
             const container = document.getElementById('displayContainer');
 
-            // בדיקה 1: האם עוד לא הגיע הזמן?
+            // בדיקת זמנים
             if (start && now < start) {
-                container.innerHTML = `<div class="full-screen-msg text-blue-400">${blockData.preMsg || 'השידור טרם החל'}</div>`;
+                container.innerHTML = `<div class="full-screen-msg text-blue-400">${blockData.preMsg || 'ממתינים לתחילת השידור...'}</div>`;
                 return;
             }
-
-            // בדיקה 2: האם עבר הזמן?
             if (end && now > end) {
                 container.innerHTML = `<div class="full-screen-msg text-red-500">${blockData.postMsg || 'השידור הסתיים'}</div>`;
                 return;
             }
 
-            // בדיקה 3: התוכן פעיל - מציגים את הסליידר
-            const media = blockData.mediaUrls?.[0] ? `<img src="${blockData.mediaUrls[0]}" class="w-full h-64 object-cover rounded-3xl mb-8 shadow-2xl">` : '';
+            // יצירת מבנה התוכן
+            const media = blockData.mediaUrls?.[0] ? `<img src="${blockData.mediaUrls[0]}" class="w-full max-h-[40vh] object-contain rounded-3xl mb-6 shadow-2xl">` : '';
             
             container.innerHTML = `
-                <div class="relative h-screen w-screen flex flex-col items-center justify-center p-10 overflow-hidden" style="background-color: ${blockData.bgColor || '#000'}">
-                    <div class="z-10 w-full max-w-4xl">
+                <div class="h-screen w-screen flex flex-col p-8 overflow-hidden" style="background-color: ${blockData.bgColor || '#000'}">
+                    <div id="headerSection" class="w-full max-w-5xl mx-auto flex flex-col items-center flex-shrink-0">
                         ${media}
-                        <h1 class="text-6xl font-black mb-10 text-center">${blockData.title}</h1>
+                        <h1 class="text-5xl font-black mb-6 text-center leading-tight">${blockData.title}</h1>
                     </div>
-                    <div class="scroll-container flex-1 w-full max-w-4xl relative">
-                        <div class="scroll-content text-4xl font-bold text-center leading-loose" style="--speed: ${blockData.slideSpeed || 15}s">
+                    
+                    <div id="scrollWrapper" class="scroll-container flex-grow w-full max-w-5xl mx-auto">
+                        <div id="textContent" class="scroll-content text-3xl font-bold leading-relaxed">
                             ${blockData.description.replace(/\n/g, '<br>')}
                         </div>
                     </div>
                 </div>
             `;
+
+            // הפעלת לוגיקת הדינמיות (האם להגליל?)
+            setTimeout(checkIfScrollNeeded, 100); 
         }
 
-        // --- המנגנון שחיפשת: בדיקה אוטומטית כל 30 שניות ---
-        setInterval(() => {
-            console.log("מבצע בדיקת זמן אוטומטית...");
-            renderContent(); 
-        }, 30000); // 30,000 מילישניות = חצי דקה
+        function checkIfScrollNeeded() {
+            const wrapper = document.getElementById('scrollWrapper');
+            const content = document.getElementById('textContent');
+            
+            if (!wrapper || !content) return;
+
+            // אם גובה הטקסט גדול מגובה המיכל שנשאר לו במסך
+            if (content.scrollHeight > wrapper.offsetHeight) {
+                content.classList.add('should-scroll');
+                content.style.setProperty('--speed', (blockData.slideSpeed || 15) + 's');
+            } else {
+                // אם הטקסט קטן, נמרכז אותו יפה באמצע
+                content.classList.remove('should-scroll');
+                wrapper.style.display = 'flex';
+                wrapper.style.alignItems = 'center';
+            }
+        }
+
+        // בדיקה אוטומטית כל 30 שניות (מעדכן הודעות זמן בלי רענון)
+        setInterval(renderContent, 30000);
+
+        // עדכון במקרה של שינוי גודל חלון
+        window.addEventListener('resize', checkIfScrollNeeded);
 
     </script>
 </body>
