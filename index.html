@@ -3,85 +3,114 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MyBlocks Admin - Fix</title>
+    <title>MyBlocks Admin Pro</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-    
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Assistant:wght@400;700;800&display=swap');
         body { font-family: 'Assistant', sans-serif; background: #f0f2f5; }
-        
-        /* שינוי עיצוב: מסגרות כהות לשדות הטקסט */
-        .field-style { 
-            @apply w-full p-4 bg-white border-2 border-slate-500 rounded-2xl outline-none focus:border-indigo-600 transition-all text-slate-800 font-bold; 
-        }
-
-        .modal-overlay { 
-            display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); 
-            z-index: 2000; align-items: center; justify-content: center; backdrop-filter: blur(4px); 
-        }
-        .modal-overlay.active { display: flex; }
+        .field-style { @apply w-full p-4 bg-white border-2 border-slate-600 rounded-2xl outline-none focus:border-indigo-600 transition-all font-bold text-slate-800; }
+        .modal { @apply hidden fixed inset-0 bg-black/70 z-[3000] items-center justify-center backdrop-blur-sm; }
+        .modal.active { @apply flex; }
     </style>
 </head>
 <body class="p-4 md:p-8">
 
-    <div id="qrModal" class="modal-overlay" onclick="this.classList.remove('active')">
-        <div class="bg-white p-8 rounded-[2.5rem] text-center shadow-2xl" onclick="event.stopPropagation()">
-            <h3 class="text-xl font-black mb-4">קוד ה-QR שלך</h3>
-            <div id="qrcode" class="flex justify-center mb-6"></div>
-            <button onclick="document.getElementById('qrModal').classList.remove('active')" class="w-full py-3 bg-slate-100 rounded-xl">סגור</button>
+    <div id="timingModal" class="modal">
+        <div class="bg-white p-8 rounded-[2.5rem] max-w-lg w-full shadow-2xl overflow-y-auto max-h-[90vh]">
+            <h3 class="text-2xl font-black mb-6 border-b pb-2">הגדרות תזמון והודעות</h3>
+            <div class="space-y-4">
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-bold mb-1">תאריך התחלה:</label>
+                        <input type="datetime-local" id="scheduleDate" class="field-style !p-2 text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold mb-1">תאריך סיום:</label>
+                        <input type="datetime-local" id="expiryDate" class="field-style !p-2 text-sm">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold mb-1">טקסט להצגה לפני הזמן:</label>
+                    <textarea id="preMsg" class="field-style h-20" placeholder="למשל: השידור יתחיל בקרוב..."></textarea>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold mb-1">טקסט להצגה לאחר שפג תוקף:</label>
+                    <textarea id="postMsg" class="field-style h-20" placeholder="למשל: המבצע הסתיים, נתראה בשנה הבאה!"></textarea>
+                </div>
+            </div>
+            <button onclick="closeModal('timingModal')" class="w-full mt-6 py-4 bg-indigo-600 text-white rounded-2xl font-bold">אישור וסגירה</button>
         </div>
     </div>
 
-    <div id="deleteModal" class="modal-overlay">
+    <div id="qrModal" class="modal">
+        <div class="bg-white p-8 rounded-[2.5rem] text-center shadow-2xl">
+            <h3 class="text-xl font-black mb-4">קוד ה-QR שלך</h3>
+            <div id="qrcode" class="flex justify-center mb-6"></div>
+            <div class="flex gap-2">
+                <button id="downloadQR" class="flex-1 py-3 bg-green-600 text-white rounded-xl font-bold">שמור תמונה</button>
+                <button onclick="closeModal('qrModal')" class="flex-1 py-3 bg-slate-100 rounded-xl">סגור</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="deleteModal" class="modal">
         <div class="bg-white p-8 rounded-[2.5rem] max-w-sm w-full text-center">
             <h3 class="text-2xl font-black mb-4 text-red-600">מחיקה</h3>
-            <p class="mb-6 text-slate-500">האם אתה בטוח? הפעולה לא ניתנת לביטול.</p>
+            <p class="mb-6 font-bold">האם למחוק תוכן זה לצמיתות?</p>
             <div class="flex gap-3">
                 <button id="confirmDeleteBtn" class="flex-1 py-3 bg-red-600 text-white rounded-xl font-bold">מחק</button>
-                <button onclick="document.getElementById('deleteModal').classList.remove('active')" class="flex-1 py-3 bg-slate-100 rounded-xl">ביטול</button>
+                <button onclick="closeModal('deleteModal')" class="flex-1 py-3 bg-slate-100 rounded-xl">ביטול</button>
             </div>
         </div>
     </div>
 
     <div class="max-w-6xl mx-auto">
-        <header class="mb-10 flex justify-between items-center bg-white p-6 rounded-3xl shadow-sm border-b-4 border-indigo-500">
-            <h1 class="text-3xl font-black text-slate-800">MyBlocks <span class="text-indigo-600">Admin</span></h1>
-            <button onclick="deleteAllData()" class="text-red-600 font-bold hover:underline">מחיקת הכל</button>
+        <header class="mb-8 flex justify-between items-center bg-white p-6 rounded-3xl shadow-sm border-b-4 border-indigo-600">
+            <h1 class="text-3xl font-black">Admin <span class="text-indigo-600 font-light">Panel</span></h1>
+            <button onclick="deleteAll()" class="text-red-500 font-bold hover:underline">מחיקת הכל</button>
         </header>
 
-        <div class="bg-white p-8 rounded-[3rem] shadow-lg mb-12 border border-slate-200">
-            <input type="hidden" id="editId"> <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div class="bg-white p-8 rounded-[3rem] shadow-xl mb-10 border border-slate-200">
+            <input type="hidden" id="editId">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                 <div>
-                    <label class="block mb-1 text-sm font-bold text-slate-600">כותרת הקובייה</label>
-                    <input type="text" id="title" class="field-style mb-4" placeholder="למשל: מבצע הקיץ">
-                    
-                    <label class="block mb-1 text-sm font-bold text-slate-600">תיאור קצר</label>
-                    <textarea id="desc" class="field-style h-24 resize-none" placeholder="פירוט על המבצע..."></textarea>
+                    <label class="font-bold text-slate-600">כותרת:</label>
+                    <input type="text" id="title" class="field-style mt-1" placeholder="כותרת הקובייה">
                 </div>
-                
                 <div>
-                    <label class="block mb-1 text-sm font-bold text-slate-600">קוד HTML (אופציונלי)</label>
-                    <textarea id="customHtml" class="field-style h-24 text-left font-mono text-xs" dir="ltr" placeholder="<div>...</div>"></textarea>
-                    
-                    <div class="grid grid-cols-2 gap-2 mt-4">
-                        <input type="datetime-local" id="scheduleDate" class="field-style !p-2 text-xs" title="תאריך התחלה">
-                        <input type="datetime-local" id="expiryDate" class="field-style !p-2 text-xs" title="תאריך סיום">
-                    </div>
+                    <label class="font-bold text-slate-600">קישור חיצוני:</label>
+                    <input type="url" id="externalUrl" class="field-style mt-1 text-left" dir="ltr" placeholder="https://...">
+                </div>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                <div>
+                    <label class="font-bold text-slate-600">תיאור:</label>
+                    <textarea id="desc" class="field-style h-32" placeholder="תיאור התוכן..."></textarea>
+                </div>
+                <div>
+                    <label class="font-bold text-slate-600">קוד HTML חופשי:</label>
+                    <textarea id="customHtml" class="field-style h-32 text-left font-mono text-xs" dir="ltr" placeholder="<div>...</div>"></textarea>
                 </div>
             </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
-                <input type="url" id="externalUrl" class="field-style text-left" dir="ltr" placeholder="קישור חיצוני https://">
-                <input type="color" id="bgColor" value="#ffffff" class="w-full h-14 border-2 border-slate-500 rounded-2xl cursor-pointer">
-                <button onclick="document.getElementById('mediaFiles').click()" class="field-style bg-slate-50 border-dashed hover:bg-slate-100 transition">
-                    <i class="fas fa-upload ml-2"></i> העלה תמונות/וידאו
+            <div class="flex flex-wrap gap-4 items-center bg-slate-50 p-6 rounded-3xl border-2 border-slate-200">
+                <button onclick="openModal('timingModal')" class="px-6 py-3 bg-white border-2 border-slate-600 rounded-xl font-black hover:bg-slate-100 transition">
+                    <i class="fas fa-clock ml-2"></i> הגדרת זמנים והודעות
+                </button>
+                <div class="flex items-center gap-2">
+                    <span class="font-bold">צבע רקע:</span>
+                    <input type="color" id="bgColor" value="#ffffff" class="w-12 h-12 border-2 border-slate-600 rounded-lg cursor-pointer">
+                </div>
+                <button onclick="document.getElementById('mediaFiles').click()" class="px-6 py-3 bg-indigo-50 text-indigo-700 rounded-xl font-bold border-2 border-indigo-200">
+                    <i class="fas fa-image ml-2"></i> הוסף תמונות/וידאו
                 </button>
                 <input type="file" id="mediaFiles" multiple class="hidden">
             </div>
 
-            <button onclick="save()" id="saveBtn" class="w-full mt-8 py-5 bg-indigo-600 text-white rounded-[2rem] font-black text-xl shadow-xl hover:bg-indigo-700 transition">שמור שינויים ✨</button>
+            <button onclick="save()" id="saveBtn" class="w-full mt-8 py-5 bg-indigo-600 text-white rounded-[2rem] font-black text-2xl shadow-xl hover:bg-indigo-700 transition-all">שמור ועדכן עכשיו ✨</button>
         </div>
 
         <div id="canvas" class="grid grid-cols-1 md:grid-cols-3 gap-8 pb-20"></div>
@@ -92,7 +121,6 @@
         import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, doc, deleteDoc, updateDoc, getDocs, serverTimestamp } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore.js";
         import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-storage.js";
 
-        // הגדרות Firebase - שנה כאן במידת הצורך
         const firebaseConfig = {
             apiKey: "AIzaSyB0f0u0WqlScU5r9PE0wm0GkKA3f1MFHv8",
             authDomain: "myblocksapp-a7d1c.firebaseapp.com",
@@ -108,39 +136,29 @@
 
         let blocks = [];
 
-        // טעינת נתונים בזמן אמת
         onSnapshot(query(collection(db, "blocks"), orderBy("createdAt", "desc")), s => {
-            blocks = []; 
-            s.forEach(d => blocks.push({id: d.id, ...d.data()}));
+            blocks = []; s.forEach(d => blocks.push({id: d.id, ...d.data()}));
             renderCards();
         });
 
-        // פונקציית השמירה המרכזית (כאן היה החוסר מקודם)
+        window.openModal = (id) => document.getElementById(id).classList.add('active');
+        window.closeModal = (id) => document.getElementById(id).classList.remove('active');
+
         window.save = async () => {
             const btn = document.getElementById('saveBtn');
             const editId = document.getElementById('editId').value;
             const files = document.getElementById('mediaFiles').files;
-            
-            btn.disabled = true;
-            btn.innerText = "שומר נתונים... המתן";
+            btn.disabled = true; btn.innerText = "שומר...";
 
             try {
-                let mediaUrls = [];
-                // אם אנחנו בעריכה, נשמור את המדיה הקיימת
-                if(editId) {
-                    const existing = blocks.find(b => b.id === editId);
-                    mediaUrls = existing.mediaUrls || [];
-                }
-
-                // העלאת קבצים חדשים אם יש
+                let mediaUrls = editId ? (blocks.find(b => b.id === editId).mediaUrls || []) : [];
                 for(let f of files) {
-                    const storageRef = ref(storage, `content/${Date.now()}_${f.name}`);
-                    await uploadBytes(storageRef, f);
-                    const url = await getDownloadURL(storageRef);
-                    mediaUrls.push(url);
+                    const r = ref(storage, `content/${Date.now()}_${f.name}`);
+                    await uploadBytes(r, f);
+                    mediaUrls.push(await getDownloadURL(r));
                 }
 
-                const payload = {
+                const data = {
                     title: document.getElementById('title').value,
                     description: document.getElementById('desc').value,
                     customHtml: document.getElementById('customHtml').value,
@@ -148,90 +166,78 @@
                     bgColor: document.getElementById('bgColor').value,
                     scheduleDate: document.getElementById('scheduleDate').value,
                     expiryDate: document.getElementById('expiryDate').value,
-                    lastUpdated: Date.now(),
-                    mediaUrls: mediaUrls
+                    preMsg: document.getElementById('preMsg').value,
+                    postMsg: document.getElementById('postMsg').value,
+                    mediaUrls,
+                    lastUpdated: Date.now()
                 };
 
-                if(editId) {
-                    await updateDoc(doc(db, "blocks", editId), payload);
-                } else {
-                    payload.createdAt = serverTimestamp();
-                    payload.views = 0;
-                    await addDoc(collection(db, "blocks"), payload);
-                }
-
-                alert("נשמר בהצלחה!");
-                resetForm();
-            } catch (e) {
-                console.error(e);
-                alert("שגיאה בשמירה: " + e.message);
-            } finally {
-                btn.disabled = false;
-                btn.innerText = "שמור שינויים ✨";
-            }
+                if(editId) await updateDoc(doc(db, "blocks", editId), data);
+                else { data.createdAt = serverTimestamp(); data.views = 0; await addDoc(collection(db, "blocks"), data); }
+                
+                location.reload();
+            } catch (e) { alert("שגיאה!"); btn.disabled = false; }
         };
 
         window.renderCards = () => {
-            const container = document.getElementById('canvas');
-            container.innerHTML = '';
+            const container = document.getElementById('canvas'); container.innerHTML = '';
             blocks.forEach(b => {
-                const shareUrl = window.location.href.replace('index.html', 'view.html') + '?id=' + b.id;
+                // יצירת קישור חדש ומדויק
+                const currentPath = window.location.href.substring(0, window.location.href.lastIndexOf('/') + 1);
+                const shareUrl = currentPath + 'view.html?id=' + b.id;
+
                 container.innerHTML += `
-                    <div class="bg-white p-4 rounded-[2rem] shadow-sm border border-slate-200">
-                        <div class="h-32 bg-slate-100 rounded-xl mb-3 overflow-hidden">
+                    <div class="bg-white p-5 rounded-[2.5rem] shadow-md border border-slate-200">
+                        <div class="h-40 bg-slate-100 rounded-2xl mb-4 overflow-hidden">
                             <img src="${b.mediaUrls?.[0] || ''}" class="w-full h-full object-cover">
                         </div>
-                        <h4 class="font-black truncate">${b.title}</h4>
-                        <div class="grid grid-cols-5 gap-1 mt-4">
-                            <button onclick="editBlock('${b.id}')" class="p-2 bg-amber-50 text-amber-600 rounded-lg"><i class="fas fa-edit"></i></button>
-                            <button onclick="window.open('${shareUrl}', '_blank')" class="p-2 bg-blue-50 text-blue-600 rounded-lg"><i class="fas fa-eye"></i></button>
-                            <button onclick="showQR('${shareUrl}')" class="p-2 bg-slate-100 rounded-lg"><i class="fas fa-qrcode"></i></button>
-                            <button onclick="copyLink('${shareUrl}')" class="p-2 bg-green-50 text-green-600 rounded-lg"><i class="fas fa-link"></i></button>
-                            <button onclick="confirmDelete('${b.id}')" class="p-2 bg-red-50 text-red-600 rounded-lg"><i class="fas fa-trash"></i></button>
+                        <h4 class="font-black truncate mb-4">${b.title || 'ללא כותרת'}</h4>
+                        <div class="grid grid-cols-5 gap-2">
+                            <button onclick="editBlock('${b.id}')" class="p-3 bg-amber-50 text-amber-600 rounded-xl"><i class="fas fa-edit"></i></button>
+                            <button onclick="window.open('${shareUrl}', '_blank')" class="p-3 bg-blue-50 text-blue-600 rounded-xl"><i class="fas fa-eye"></i></button>
+                            <button onclick="showQR('${shareUrl}')" class="p-3 bg-slate-100 rounded-xl"><i class="fas fa-qrcode"></i></button>
+                            <button onclick="copyUrl('${shareUrl}')" class="p-3 bg-green-50 text-green-600 rounded-xl"><i class="fas fa-copy"></i></button>
+                            <button onclick="confirmDel('${b.id}')" class="p-3 bg-red-50 text-red-600 rounded-xl"><i class="fas fa-trash"></i></button>
                         </div>
                     </div>`;
             });
         };
 
-        window.editBlock = (id) => {
-            const b = blocks.find(x => x.id === id);
-            document.getElementById('editId').value = b.id;
-            document.getElementById('title').value = b.title;
-            document.getElementById('desc').value = b.description;
-            document.getElementById('customHtml').value = b.customHtml || "";
-            document.getElementById('externalUrl').value = b.url || "";
-            document.getElementById('bgColor').value = b.bgColor || "#ffffff";
-            window.scrollTo({top: 0, behavior: 'smooth'});
-        };
-
-        window.confirmDelete = (id) => {
-            const modal = document.getElementById('deleteModal');
-            modal.classList.add('active');
-            document.getElementById('confirmDeleteBtn').onclick = async () => {
-                await deleteDoc(doc(db, "blocks", id));
-                modal.classList.remove('active');
+        window.showQR = (url) => {
+            const qrdiv = document.getElementById('qrcode'); qrdiv.innerHTML = '';
+            const qrcode = new QRCode(qrdiv, { text: url, width: 200, height: 200 });
+            openModal('qrModal');
+            
+            document.getElementById('downloadQR').onclick = () => {
+                const img = qrdiv.querySelector('img').src;
+                const link = document.createElement('a');
+                link.href = img; link.download = 'qrcode.png'; link.click();
             };
         };
 
-        window.showQR = (url) => {
-            const qrDiv = document.getElementById('qrcode');
-            qrDiv.innerHTML = '';
-            new QRCode(qrDiv, { text: url, width: 150, height: 150 });
-            document.getElementById('qrModal').classList.add('active');
+        window.editBlock = (id) => {
+            const b = blocks.find(x => x.id === id);
+            document.getElementById('editId').value = b.id;
+            document.getElementById('title').value = b.title || '';
+            document.getElementById('desc').value = b.description || '';
+            document.getElementById('customHtml').value = b.customHtml || '';
+            document.getElementById('externalUrl').value = b.url || '';
+            document.getElementById('bgColor').value = b.bgColor || '#ffffff';
+            document.getElementById('scheduleDate').value = b.scheduleDate || '';
+            document.getElementById('expiryDate').value = b.expiryDate || '';
+            document.getElementById('preMsg').value = b.preMsg || '';
+            document.getElementById('postMsg').value = b.postMsg || '';
+            window.scrollTo({top: 0, behavior: 'smooth'});
         };
 
-        window.copyLink = (url) => {
-            navigator.clipboard.writeText(url);
-            alert("הקישור הועתק!");
+        window.copyUrl = (url) => { navigator.clipboard.writeText(url); alert("הקישור הועתק!"); };
+        window.confirmDel = (id) => { 
+            openModal('deleteModal');
+            document.getElementById('confirmDeleteBtn').onclick = async () => {
+                await deleteDoc(doc(db, "blocks", id));
+                closeModal('deleteModal');
+            };
         };
-
-        function resetForm() {
-            document.getElementById('editId').value = '';
-            document.getElementById('title').value = '';
-            document.getElementById('desc').value = '';
-            document.getElementById('customHtml').value = '';
-            document.getElementById('mediaFiles').value = '';
-        }
     </script>
 </body>
 </html>
