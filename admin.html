@@ -89,12 +89,14 @@
 
         <div class="bg-white p-8 rounded-[3.5rem] shadow-xl border border-slate-100 mb-10">
             <input type="hidden" id="editId">
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div class="bg-white p-6 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.3)] border-2 border-slate-800">
+   </div>
                 <div class="space-y-4">
                     <input type="text" id="title" class="input-clean text-2xl border-b" placeholder="כותרת הקובייה *">
                     <textarea id="desc" class="input-clean h-28 resize-none" placeholder="תיאור..."></textarea>
                 </div>
-                <div class="space-y-4">
+                <div class="bg-white p-6 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.3)] border-2 border-slate-800">
+   </div>
                     <input type="url" id="externalUrl" class="input-clean text-left border-b" dir="ltr" placeholder="URL קישור חיצוני">
                     <textarea id="customHtml" class="input-clean h-28 text-left font-mono text-xs" dir="ltr" placeholder="Embed Code (HTML)"></textarea>
                 </div>
@@ -229,6 +231,7 @@
                 btn.disabled = false;
             }
         };
+    
 
         onSnapshot(query(collection(db, "blocks"), orderBy("createdAt", "desc")), snap => {
             const canvas = document.getElementById('canvas');
