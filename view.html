@@ -3,36 +3,28 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MyBlocks | צפייה</title>
+    <title>MyBlocks | View</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Assistant:wght@400;800&display=swap');
-        body { font-family: 'Assistant', sans-serif; min-height: 100 screen; transition: background 0.5s ease; }
-        .html-render-container iframe { width: 100% !important; border-radius: 1rem; }
+        body { font-family: 'Assistant', sans-serif; transition: background 0.5s; }
+        .gallery-container::-webkit-scrollbar { display: none; }
     </style>
 </head>
-<body class="flex flex-col items-center justify-center p-6">
-
-    <div id="loader" class="flex flex-col items-center gap-4">
-        <div class="w-12 h-12 border-4 border-indigo-100 border-t-indigo-600 rounded-full animate-spin"></div>
-    </div>
+<body class="flex flex-col items-center justify-center p-4 min-h-screen">
 
     <div id="content" class="max-w-2xl w-full text-center hidden">
-        <div id="media-box" class="rounded-[3rem] overflow-hidden shadow-2xl mb-8 h-64 md:h-96 bg-white border border-slate-100"></div>
+        <div id="gallery" class="gallery-container flex overflow-x-auto gap-4 mb-8 snap-x"></div>
         
-        <h1 id="title" class="text-4xl md:text-5xl font-black text-slate-800 mb-4 tracking-tight"></h1>
-        <p id="desc" class="text-slate-600 text-lg mb-8 px-4 whitespace-pre-wrap"></p>
-        
-        <div id="htmlDisplay" class="html-render-container mb-10 text-right"></div>
-        
-        <div class="flex flex-col gap-4">
-            <a id="mainBtn" href="#" target="_blank" class="inline-block w-full py-6 bg-indigo-600 text-white rounded-[2.5rem] font-black shadow-2xl hover:bg-indigo-700 transition transform active:scale-95 text-xl">מעבר לתוכן המלא</a>
-        </div>
+        <h1 id="title" class="text-4xl font-black text-slate-800 mb-4"></h1>
+        <p id="desc" class="text-slate-600 mb-8 whitespace-pre-wrap"></p>
+        <div id="htmlDisplay" class="mb-10 text-right"></div>
+        <a id="mainBtn" href="#" target="_blank" class="inline-block w-full py-6 bg-indigo-600 text-white rounded-[2rem] font-black shadow-xl hover:scale-95 transition text-xl">מעבר לתוכן המלא</a>
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js";
-        import { getFirestore, doc, getDoc, updateDoc, increment } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore.js";
+        import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyB0f0u0WqlScU5r9PE0wm0GkKA3f1MFHv8",
@@ -45,50 +37,27 @@
 
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
-
         const id = new URLSearchParams(window.location.search).get('id');
 
         if(id) {
             getDoc(doc(db, "blocks", id)).then(snap => {
                 if(snap.exists()) {
                     const d = snap.data();
-                    
-                    // בדיקת תאריך תפוגה
-                    if(d.expiryDate && new Date(d.expiryDate) < new Date().setHours(0,0,0,0)) {
-                        document.getElementById('loader').innerHTML = "<h1 class='text-2xl font-black text-red-500'>הקישור פג תוקף ⏳</h1>";
-                        return;
-                    }
-
-                    // עדכון מונה צפיות
-                    updateDoc(doc(db, "blocks", id), { views: increment(1) });
-
-                    // הגדרות עיצוב
                     document.body.style.backgroundColor = d.bgColor || "#ffffff";
-                    document.title = d.title;
                     document.getElementById('title').innerText = d.title;
                     document.getElementById('desc').innerText = d.description || "";
+                    document.getElementById('htmlDisplay').innerHTML = d.htmlContent || "";
                     
-                    // הזרקת HTML - החלק החשוב!
-                    if(d.htmlContent) {
-                        document.getElementById('htmlDisplay').innerHTML = d.htmlContent;
-                    }
+                    const gallery = document.getElementById('gallery');
+                    if(d.mediaUrls && d.mediaUrls.length) {
+                        d.mediaUrls.forEach(url => {
+                            gallery.innerHTML += `<img src="${url}" class="h-64 md:h-96 rounded-[2rem] shadow-lg snap-center">`;
+                        });
+                    } else { gallery.style.display = 'none'; }
 
-                    // מדיה
-                    const mb = document.getElementById('media-box');
-                    if(d.mediaUrl) {
-                        mb.innerHTML = `<img src="${d.mediaUrl}" class="w-full h-full object-cover">`;
-                    } else {
-                        mb.style.display = 'none';
-                    }
-                    
-                    // כפתור חיצוני
                     if(d.url) document.getElementById('mainBtn').href = d.url;
                     else document.getElementById('mainBtn').style.display = 'none';
-                    
-                    document.getElementById('loader').style.display = 'none';
                     document.getElementById('content').classList.remove('hidden');
-                } else {
-                    document.getElementById('loader').innerHTML = "<h1 class='text-2xl font-black'>הדף לא נמצא</h1>";
                 }
             });
         }
