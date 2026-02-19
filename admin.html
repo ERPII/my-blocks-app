@@ -3,14 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin - Advanced History & Trash</title>
+    <title>Admin - Ultimate Control</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Assistant:wght@400;700;800&display=swap');
-        body { font-family: 'Assistant', sans-serif; background-color: #cbd5e1; margin: 0; padding: 0; }
+        body { font-family: 'Assistant', sans-serif; background-color: #f1f5f9; margin: 0; padding: 0; }
         
         .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 9999; align-items: center; justify-content: center; backdrop-filter: blur(8px); }
         .modal.active { display: flex; }
@@ -22,29 +22,37 @@
 </head>
 <body class="p-4 md:p-8">
 
-    <button onclick="toggleModal('historyModal', true)" class="fixed top-5 left-5 z-50 p-4 bg-white border-4 border-black rounded-2xl shadow-2xl font-black">
-        <i class="fas fa-archive ml-2"></i> ארכיון והיסטוריה
+    <button onclick="toggleModal('historyModal', true)" class="fixed top-5 left-5 z-50 p-4 bg-white border-4 border-black rounded-2xl shadow-2xl font-black hover:scale-105 transition">
+        <i class="fas fa-history ml-2"></i> היסטוריה וארכיון
     </button>
 
     <div id="deleteConfirmModal" class="modal">
         <div class="bg-white p-8 rounded-[3rem] w-full max-w-sm shadow-2xl border-4 border-black text-center">
-            <div class="text-red-500 text-6xl mb-4"><i class="fas fa-trash-alt"></i></div>
-            <h3 id="deleteConfirmTitle" class="text-2xl font-black mb-2">להסיר מהלוח?</h3>
-            <p id="deleteConfirmDesc" class="text-slate-500 mb-6 font-bold">הקובייה תועבר לארכיון ותוכל לשחזר אותה בהמשך.</p>
+            <div id="deleteIcon" class="text-red-500 text-6xl mb-4"><i class="fas fa-exclamation-circle"></i></div>
+            <h3 id="deleteTitle" class="text-2xl font-black mb-2">להסיר מהלוח?</h3>
+            <p id="deleteDesc" class="text-slate-500 mb-6 font-bold">הקובייה תעבור להיסטוריה ותוכל לשחזר אותה.</p>
             <div class="flex gap-3">
-                <button id="executeDeleteBtn" class="flex-1 py-4 bg-red-600 text-white rounded-2xl font-black">בצע</button>
+                <button id="confirmBtn" class="flex-1 py-4 bg-red-600 text-white rounded-2xl font-black">אישור</button>
                 <button onclick="toggleModal('deleteConfirmModal', false)" class="flex-1 py-4 bg-slate-200 rounded-2xl font-bold">ביטול</button>
             </div>
         </div>
     </div>
 
+    <div id="qrModal" class="modal">
+        <div class="bg-white p-8 rounded-[3rem] w-full max-w-sm shadow-2xl text-center border-4 border-black">
+            <h3 class="text-2xl font-black mb-6 italic">קוד QR להצגה</h3>
+            <div id="qrcode" class="flex justify-center mb-6 p-4 border-2 rounded-2xl"></div>
+            <button id="downloadQR" class="w-full py-4 bg-green-600 text-white rounded-2xl font-black mb-2">
+                <i class="fas fa-download ml-2"></i> הורד תמונה
+            </button>
+            <button onclick="toggleModal('qrModal', false)" class="w-full py-4 bg-slate-100 rounded-2xl font-bold">סגור</button>
+        </div>
+    </div>
+
     <div id="historyModal" class="modal">
         <div class="bg-white p-8 rounded-[3rem] w-full max-w-lg shadow-2xl border-4 border-black max-h-[80vh] flex flex-col">
-            <h3 class="text-2xl font-black mb-6 flex items-center gap-2">
-                <i class="fas fa-history text-blue-500"></i> ניהול תוכן וארכיון
-            </h3>
-            <div id="historyList" class="space-y-3 overflow-y-auto flex-1 pr-2">
-                </div>
+            <h3 class="text-2xl font-black mb-6">ארכיון קוביות</h3>
+            <div id="historyList" class="space-y-3 overflow-y-auto flex-1 pr-2"></div>
             <button onclick="toggleModal('historyModal', false)" class="w-full mt-6 py-4 bg-black text-white rounded-2xl font-black">סגור</button>
         </div>
     </div>
@@ -56,30 +64,30 @@
         </div>
     </div>
 
-    <div class="max-w-6xl mx-auto mt-16">
+    <div class="max-w-6xl mx-auto mt-20">
         <div id="mainForm" class="bg-white p-8 md:p-12 rounded-[4rem] shadow-2xl border-4 border-white mb-16 relative">
             <input type="hidden" id="editId">
             <div class="grid grid-cols-1 md:grid-cols-2 gap-10">
                 <div class="flex flex-col gap-6">
-                    <input type="text" id="title" class="text-3xl font-black outline-none border-b-4 border-slate-100 focus:border-black p-2" placeholder="כותרת הקובייה">
+                    <input type="text" id="title" class="text-3xl font-black outline-none border-b-4 border-slate-100 focus:border-black p-2" placeholder="כותרת">
                     <textarea id="desc" class="h-32 p-4 bg-slate-50 rounded-3xl outline-none font-bold" placeholder="טקסט לגלילה..."></textarea>
                 </div>
                 <div class="flex flex-col gap-6">
-                    <input type="url" id="externalUrl" class="text-left font-bold text-blue-600 border-b-4 border-slate-100 p-2" dir="ltr" placeholder="Link (URL)">
+                    <input type="url" id="externalUrl" class="text-left font-bold text-blue-600 border-b-4 border-slate-100 p-2" dir="ltr" placeholder="https://link.com">
                     <textarea id="customHtml" class="h-32 p-4 bg-slate-900 text-green-400 rounded-3xl font-mono text-xs" dir="ltr" placeholder="Embed Code"></textarea>
                 </div>
             </div>
 
-            <div class="mt-10 p-6 bg-slate-100 rounded-[3rem] flex flex-wrap items-center gap-4 border-2">
-                <div class="flex items-center gap-4 bg-white p-2 px-4 border-4 border-black rounded-2xl">
+            <div class="mt-10 p-6 bg-slate-100 rounded-[3rem] flex flex-wrap items-center gap-4">
+                <div class="flex items-center gap-4 bg-white p-2 px-4 rounded-2xl border-2">
                     <input type="color" id="bgColor" value="#ffffff" class="w-8 h-8">
-                    <input type="number" id="slideSpeed" value="10" title="מהירות גלילה" class="w-10 text-center font-black outline-none">
+                    <input type="number" id="slideSpeed" value="10" title="מהירות" class="w-10 text-center font-black">
                 </div>
                 <button onclick="document.getElementById('mediaFiles').click()" class="flex-1 p-4 bg-indigo-600 text-white rounded-2xl font-black">הוסף מדיה</button>
                 <input type="file" id="mediaFiles" multiple class="hidden" onchange="handleFileSelect(event)">
             </div>
-            <div id="imagePreview" class="mt-4 space-y-1"></div>
-            <button id="saveBtn" onclick="saveBlock()" class="w-full mt-10 py-6 bg-black text-white rounded-[2.5rem] font-black text-2xl transition active:scale-95">שמור ופרסם ✨</button>
+            <div id="imagePreview" class="mt-4 flex gap-2 overflow-x-auto"></div>
+            <button id="saveBtn" onclick="saveBlock()" class="w-full mt-10 py-6 bg-black text-white rounded-[2.5rem] font-black text-2xl active:scale-95 transition">שמור ועדכן ✨</button>
         </div>
 
         <div id="canvas" class="grid grid-cols-1 md:grid-cols-3 gap-8 pb-32"></div>
@@ -106,6 +114,7 @@
         let selectedFiles = [], existingUrls = [], blocks = [];
 
         window.toggleModal = (id, show) => document.getElementById(id).classList.toggle('active', show);
+        
         window.showAlert = (title, icon = '✅') => {
             document.getElementById('alertTitle').innerText = title;
             document.getElementById('alertIcon').innerText = icon;
@@ -116,13 +125,13 @@
         window.handleFileSelect = (e) => { selectedFiles = [...selectedFiles, ...Array.from(e.target.files)]; renderPreview(); };
         function renderPreview() {
             const container = document.getElementById('imagePreview'); container.innerHTML = '';
-            existingUrls.forEach((url, i) => { container.innerHTML += `<div class="flex items-center bg-white p-1 rounded-lg border text-[10px]"><img src="${url}" class="w-6 h-6 object-cover rounded ml-2"><button onclick="removeExisting(${i})" class="text-red-500 mr-auto"><i class="fas fa-times"></i></button></div>`; });
+            existingUrls.forEach((url, i) => { container.innerHTML += `<div class="relative"><img src="${url}" class="w-12 h-12 object-cover rounded-lg border-2"><button onclick="removeExisting(${i})" class="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-4 h-4 text-[10px]">X</button></div>`; });
         }
         window.removeExisting = (i) => { existingUrls.splice(i, 1); renderPreview(); };
 
         window.saveBlock = async () => {
             const title = document.getElementById('title').value;
-            if(!title) return showAlert("הזן כותרת", "⚠️");
+            if(!title) return showAlert("חסר כותרת", "⚠️");
             const btn = document.getElementById('saveBtn'); btn.disabled = true;
             try {
                 let urls = [...existingUrls];
@@ -141,7 +150,7 @@
                 const id = document.getElementById('editId').value;
                 if(id) await updateDoc(doc(db, "blocks", id), data);
                 else { data.createdAt = serverTimestamp(); await addDoc(collection(db, "blocks"), data); }
-                showAlert("נשמר בהצלחה");
+                showAlert("נשמר בהצלחה!");
                 setTimeout(() => location.reload(), 1100);
             } catch (e) { btn.disabled = false; }
         };
@@ -153,75 +162,71 @@
             blocks = snap.docs.map(d => ({id: d.id, ...d.data()}));
             
             blocks.forEach(b => {
-                const dateStr = b.createdAt?.toDate ? b.createdAt.toDate().toLocaleString('he-IL') : 'זה עתה';
-                
-                // תצוגה בהיסטוריה (כולל אלו שנמחקו)
+                // מילוי היסטוריה
                 historyList.innerHTML += `
-                    <div class="p-4 ${b.isVisible ? 'bg-slate-50 border-slate-200' : 'bg-red-50 border-red-100'} rounded-2xl border-2 flex justify-between items-center">
-                        <div class="flex-1">
-                            <div class="font-black text-sm">${b.title} ${!b.isVisible ? '<span class="text-red-500 text-[10px]">(בארכיון)</span>' : ''}</div>
-                            <div class="text-[9px] text-slate-400">${dateStr}</div>
-                        </div>
+                    <div class="p-4 bg-slate-50 rounded-2xl border flex justify-between items-center ${!b.isVisible ? 'opacity-50' : ''}">
+                        <div class="font-black text-sm">${b.title}</div>
                         <div class="flex gap-1">
-                            ${!b.isVisible ? `<button onclick="restoreBlock('${b.id}')" class="p-2 text-green-600" title="שחזר"><i class="fas fa-undo"></i></button>` : ''}
-                            <button onclick="requestFinalDelete('${b.id}')" class="p-2 text-red-500" title="מחיקה סופית מהשרת"><i class="fas fa-skull"></i></button>
-                            <button onclick="editBlock('${b.id}'); toggleModal('historyModal', false)" class="p-2 text-blue-500"><i class="fas fa-edit"></i></button>
+                            ${!b.isVisible ? `<button onclick="updateDoc(doc(db, 'blocks', '${b.id}'), {isVisible:true})" class="text-green-600 p-2"><i class="fas fa-undo"></i></button>` : ''}
+                            <button onclick="confirmAction('final', '${b.id}')" class="text-red-500 p-2"><i class="fas fa-trash"></i></button>
                         </div>
                     </div>`;
 
                 if(b.isVisible !== false) {
-                    const media = b.mediaUrls?.[0] ? `<img src="${b.mediaUrls[0]}" class="w-full h-full object-cover">` : `<div class="w-full h-full bg-white flex items-center justify-center text-slate-100"><i class="fas fa-image text-4xl"></i></div>`;
+                    const link = window.location.origin + '/view.html?id=' + b.id;
+                    const media = b.mediaUrls?.[0] ? `<img src="${b.mediaUrls[0]}" class="w-full h-full object-cover">` : `<div class="w-full h-full bg-slate-100 flex items-center justify-center text-4xl text-white"><i class="fas fa-image"></i></div>`;
+                    
                     canvas.innerHTML += `
-                        <div class="bg-white p-5 rounded-[3.5rem] shadow-xl border-4 border-white flex flex-col h-[420px]">
-                            <div class="h-40 bg-slate-50 rounded-[2.5rem] mb-4 overflow-hidden border-2 relative">${media}</div>
+                        <div class="bg-white p-6 rounded-[3.5rem] shadow-xl border-4 border-white flex flex-col h-[450px]">
+                            <div class="h-44 bg-slate-50 rounded-[2.5rem] mb-4 overflow-hidden border-2 relative">${media}</div>
                             <h4 class="font-black text-lg mb-2 truncate">${b.title}</h4>
                             <div class="flex-1 overflow-hidden bg-slate-50 rounded-2xl p-4 relative scroll-container">
                                 <div class="scroll-content text-xs font-bold leading-relaxed" style="--scroll-speed: ${b.slideSpeed}s">${b.description}</div>
                             </div>
-                            <div class="grid grid-cols-4 gap-1 mt-4">
-                                <button onclick="editBlock('${b.id}')" class="p-3 bg-amber-50 text-amber-600 rounded-xl"><i class="fas fa-edit"></i></button>
-                                <button onclick="duplicateBlock('${b.id}')" class="p-3 bg-purple-50 text-purple-600 rounded-xl"><i class="fas fa-copy"></i></button>
-                                <button onclick="requestArchive('${b.id}')" class="p-3 bg-red-50 text-red-600 rounded-xl"><i class="fas fa-eye-slash"></i></button>
-                                <button onclick="showAlert('QR מוכן')" class="p-3 bg-green-50 text-green-600 rounded-xl"><i class="fas fa-qrcode"></i></button>
+                            <div class="grid grid-cols-5 gap-1 mt-4">
+                                <button onclick="window.open('${link}', '_blank')" class="p-3 bg-blue-50 text-blue-600 rounded-xl" title="חלון חדש"><i class="fas fa-external-link-alt"></i></button>
+                                <button onclick="copyToClipboard('${link}')" class="p-3 bg-indigo-50 text-indigo-600 rounded-xl" title="העתק קישור"><i class="fas fa-copy"></i></button>
+                                <button onclick="showQR('${link}')" class="p-3 bg-green-50 text-green-600 rounded-xl" title="קוד QR"><i class="fas fa-qrcode"></i></button>
+                                <button onclick="editBlock('${b.id}')" class="p-3 bg-amber-50 text-amber-600 rounded-xl" title="עריכה"><i class="fas fa-edit"></i></button>
+                                <button onclick="confirmAction('archive', '${b.id}')" class="p-3 bg-red-50 text-red-600 rounded-xl" title="מחיקה"><i class="fas fa-trash-alt"></i></button>
                             </div>
                         </div>`;
                 }
             });
         });
 
-        // פונקציות מחיקה וניהול
-        window.requestArchive = (id) => {
-            document.getElementById('deleteConfirmTitle').innerText = "להעביר לארכיון?";
-            document.getElementById('deleteConfirmDesc').innerText = "הקובייה תוסר מהלוח אך תישמר בהיסטוריה.";
+        // לוגיקת אישורים במרכז
+        window.confirmAction = (type, id) => {
+            const modal = document.getElementById('deleteConfirmModal');
+            const title = document.getElementById('deleteTitle');
+            const desc = document.getElementById('deleteDesc');
+            const confirmBtn = document.getElementById('confirmBtn');
+
+            if(type === 'archive') {
+                title.innerText = "להסיר מהלוח?";
+                desc.innerText = "הקובייה תעבור להיסטוריה ותוכל לשחזר אותה.";
+                confirmBtn.onclick = async () => { await updateDoc(doc(db, "blocks", id), {isVisible: false}); toggleModal('deleteConfirmModal', false); showAlert("הוסר מהלוח"); };
+            } else {
+                title.innerText = "מחיקה סופית?";
+                desc.innerText = "פעולה זו תמחק את המידע לצמיתות מהשרת!";
+                confirmBtn.onclick = async () => { await deleteDoc(doc(db, "blocks", id)); toggleModal('deleteConfirmModal', false); showAlert("נמחק סופית", "🗑️"); };
+            }
             toggleModal('deleteConfirmModal', true);
-            document.getElementById('executeDeleteBtn').onclick = async () => {
-                await updateDoc(doc(db, "blocks", id), { isVisible: false });
-                toggleModal('deleteConfirmModal', false);
-                showAlert("הועבר לארכיון");
+        };
+
+        window.copyToClipboard = (text) => {
+            navigator.clipboard.writeText(text);
+            showAlert("הקישור הועתק!");
+        };
+
+        window.showQR = (url) => {
+            const qrdiv = document.getElementById('qrcode'); qrdiv.innerHTML = '';
+            new QRCode(qrdiv, { text: url, width: 200, height: 200 });
+            toggleModal('qrModal', true);
+            document.getElementById('downloadQR').onclick = () => {
+                const img = qrdiv.querySelector('img').src;
+                const a = document.createElement('a'); a.href = img; a.download = 'QR_Code.png'; a.click();
             };
-        };
-
-        window.requestFinalDelete = (id) => {
-            document.getElementById('deleteConfirmTitle').innerText = "מחיקה סופית?";
-            document.getElementById('deleteConfirmDesc').innerText = "פעולה זו תמחק את המידע לצמיתות מהשרת!";
-            toggleModal('deleteConfirmModal', true);
-            document.getElementById('executeDeleteBtn').onclick = async () => {
-                await deleteDoc(doc(db, "blocks", id));
-                toggleModal('deleteConfirmModal', false);
-                showAlert("נמחק סופית", "🗑️");
-            };
-        };
-
-        window.restoreBlock = async (id) => {
-            await updateDoc(doc(db, "blocks", id), { isVisible: true });
-            showAlert("הקובייה שוחזרה ללוח");
-        };
-
-        window.duplicateBlock = async (id) => {
-            const b = blocks.find(x => x.id === id);
-            const newData = { ...b, title: b.title + " (עותק)", createdAt: serverTimestamp(), isVisible: true };
-            delete newData.id; await addDoc(collection(db, "blocks"), newData);
-            showAlert("שוכפל בהצלחה");
         };
 
         window.editBlock = (id) => {
