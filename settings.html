@@ -9,60 +9,66 @@
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Assistant:wght@400;800&display=swap');
         body { font-family: 'Assistant', sans-serif; background: #f8fafc; }
-        /* עיצוב שדות קלט כהים */
-        .input-dark { 
-            @apply w-full p-4 border-2 border-slate-700 rounded-2xl font-bold bg-white focus:border-indigo-600 outline-none transition-all; 
-        }
+        .input-dark { @apply w-full p-4 border-2 border-slate-700 rounded-2xl font-bold bg-white focus:border-indigo-600 outline-none transition-all; }
+        .card { @apply bg-white p-8 rounded-[2.5rem] shadow-xl border-2 border-slate-100 mb-8; }
     </style>
 </head>
 <body class="p-4 md:p-10">
 
-    <div class="max-w-4xl mx-auto">
-        <div class="flex justify-between items-center mb-10">
-            <h1 class="text-3xl font-black text-slate-800">הגדרות מותג</h1>
-            <a href="admin.html" class="bg-indigo-600 text-white px-8 py-3 rounded-2xl font-black shadow-lg hover:bg-indigo-700 transition">
-                <i class="fas fa-th-large ml-2"></i> ניהול קוביות
-            </a>
-        </div>
+    <div class="max-w-5xl mx-auto">
+        <header class="flex justify-between items-center mb-10">
+            <h1 class="text-4xl font-black text-slate-800">הגדרות ניהול</h1>
+            <a href="admin.html" class="bg-slate-900 text-white px-8 py-3 rounded-2xl font-black shadow-lg hover:scale-105 transition">חזרה ללוח הקוביות</a>
+        </header>
 
-        <div class="bg-white p-8 rounded-[3rem] shadow-2xl border-2 border-slate-100">
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
-                
+        <div class="card">
+            <h2 class="text-2xl font-black mb-6 border-b-2 border-slate-100 pb-2 text-indigo-600">עיצוב ומותג</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
                 <div class="space-y-4">
-                    <div>
-                        <label class="block text-sm font-black text-slate-500 mb-2">שם המערכת (יופיע למעלה):</label>
-                        <input type="text" id="appName" class="input-dark" placeholder="למשל: MyBlocks Pro">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-black text-slate-500 mb-2">טקסט תחתון (Footer):</label>
-                        <input type="text" id="footerText" class="input-dark" placeholder="© 2026 כל הזכויות שמורות">
-                    </div>
+                    <label class="block font-bold">שם האפליקציה:</label>
+                    <input type="text" id="appName" class="input-dark" placeholder="למשל: MyBlocks Pro">
+                    
+                    <label class="block font-bold">צבע מותג:</label>
+                    <input type="color" id="brandColor" class="w-full h-14 border-2 border-slate-700 rounded-2xl cursor-pointer">
                 </div>
-
                 <div class="space-y-4">
-                    <div>
-                        <label class="block text-sm font-black text-slate-500 mb-2">צבע מותג ראשי:</label>
-                        <input type="color" id="brandColor" class="w-full h-14 border-2 border-slate-700 rounded-2xl cursor-pointer p-1 bg-white">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-black text-slate-500 mb-2">קישור ללוגו (URL):</label>
-                        <input type="url" id="logoUrl" class="input-dark text-left" dir="ltr" placeholder="https://...">
-                    </div>
+                    <label class="block font-bold">טקסט Footer:</label>
+                    <input type="text" id="footerText" class="input-dark" placeholder="© 2026 כל הזכויות שמורות">
+                    
+                    <label class="block font-bold">קישור ללוגו:</label>
+                    <input type="url" id="logoUrl" class="input-dark text-left" dir="ltr" placeholder="https://...">
                 </div>
             </div>
+            <button onclick="saveGeneralSettings()" id="saveBrandBtn" class="w-full mt-8 bg-indigo-600 text-white py-5 rounded-2xl font-black text-xl hover:bg-indigo-700 transition">שמור הגדרות מותג ✨</button>
+        </div>
 
-            <button onclick="saveSettings()" id="saveBtn" class="w-full bg-slate-900 text-white py-6 rounded-[2rem] font-black text-2xl hover:bg-black transition-all transform active:scale-95 shadow-xl">
-                שמור הגדרות מותג ✨
-            </button>
+        <div class="card">
+            <h2 class="text-2xl font-black mb-6 border-b-2 border-slate-100 pb-2 text-indigo-600">משתמשים וצוות</h2>
+            <div class="flex flex-wrap gap-4 mb-6">
+                <input type="text" id="userName" class="input-dark flex-1 min-w-[200px]" placeholder="שם משתמש">
+                <input type="email" id="userEmail" class="input-dark flex-1 min-w-[200px]" placeholder="אימייל">
+                <button onclick="addUser()" class="px-10 py-4 bg-slate-900 text-white rounded-2xl font-black">הוסף משתמש</button>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full text-right border-collapse">
+                    <thead>
+                        <tr class="bg-slate-50 text-slate-500 uppercase text-sm">
+                            <th class="p-4 border-b">שם</th>
+                            <th class="p-4 border-b">אימייל</th>
+                            <th class="p-4 border-b text-center">פעולות</th>
+                        </tr>
+                    </thead>
+                    <tbody id="usersList">
+                        </tbody>
+                </table>
+            </div>
         </div>
     </div>
 
     <script type="module">
-        // ייבוא פונקציות מ-Firebase
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js";
-        import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore.js";
+        import { getFirestore, doc, setDoc, onSnapshot, collection, addDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore.js";
 
-        // הגדרות Firebase שלך - וודא שהן נכונות
         const firebaseConfig = {
             apiKey: "AIzaSyB0f0u0WqlScU5r9PE0wm0GkKA3f1MFHv8",
             authDomain: "myblocksapp-a7d1c.firebaseapp.com",
@@ -75,11 +81,10 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
-        // פונקציה שטוענת את הנתונים מהמסד ברגע שהדף נפתח
+        // טעינת הגדרות כלליות
         onSnapshot(doc(db, "settings", "general"), (snap) => {
             if(snap.exists()){
                 const d = snap.data();
-                // עדכון שדות הקלט בערכים השמורים
                 document.getElementById('appName').value = d.appName || '';
                 document.getElementById('footerText').value = d.footerText || '';
                 document.getElementById('brandColor').value = d.brandColor || '#4f46e5';
@@ -87,26 +92,48 @@
             }
         });
 
-        // פונקציית שמירה
-        window.saveSettings = async () => {
-            const btn = document.getElementById('saveBtn');
-            btn.disabled = true; btn.innerText = "שומר..."; // שינוי טקסט בכפתור בזמן עבודה
+        // שמירת הגדרות כלליות
+        window.saveGeneralSettings = async () => {
+            const btn = document.getElementById('saveBrandBtn');
+            btn.innerText = "שומר...";
+            await setDoc(doc(db, "settings", "general"), {
+                appName: document.getElementById('appName').value,
+                footerText: document.getElementById('footerText').value,
+                brandColor: document.getElementById('brandColor').value,
+                logoUrl: document.getElementById('logoUrl').value
+            });
+            btn.innerText = "שמור הגדרות מותג ✨";
+            alert("הגדרות המותג נשמרו!");
+        };
 
-            try {
-                // שמירה לתוך מסמך אחד קבוע שנקרא general בתוך אוסף settings
-                await setDoc(doc(db, "settings", "general"), {
-                    appName: document.getElementById('appName').value,
-                    footerText: document.getElementById('footerText').value,
-                    brandColor: document.getElementById('brandColor').value,
-                    logoUrl: document.getElementById('logoUrl').value,
-                    updatedAt: Date.now()
-                });
-                alert("ההגדרות עודכנו בהצלחה!");
-            } catch (e) {
-                alert("שגיאה בשמירה: " + e.message);
-            } finally {
-                btn.disabled = false; btn.innerText = "שמור הגדרות מותג ✨";
-            }
+        // ניהול משתמשים
+        onSnapshot(collection(db, "users"), (s) => {
+            const list = document.getElementById('usersList');
+            list.innerHTML = '';
+            s.forEach(d => {
+                const u = d.data();
+                list.innerHTML += `
+                    <tr class="hover:bg-slate-50 transition">
+                        <td class="p-4 border-b font-bold">${u.name}</td>
+                        <td class="p-4 border-b text-slate-500">${u.email}</td>
+                        <td class="p-4 border-b text-center">
+                            <button onclick="deleteUser('${d.id}')" class="text-red-500 hover:text-red-700"><i class="fas fa-trash"></i></button>
+                        </td>
+                    </tr>`;
+            });
+        });
+
+        window.addUser = async () => {
+            const name = document.getElementById('userName').value;
+            const email = document.getElementById('userEmail').value;
+            if(!name || !email) return alert("מלא את כל הפרטים");
+            await addDoc(collection(db, "users"), { name, email, createdAt: Date.now() });
+            document.getElementById('userName').value = '';
+            document.getElementById('userEmail').value = '';
+        };
+
+        window.deleteUser = async (id) => {
+            if(confirm("למחוק משתמש זה?")) await deleteDoc(doc(db, "users", id));
         };
     </script>
 </body>
