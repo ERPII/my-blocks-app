@@ -2,7 +2,248 @@
 <html lang="he" dir="rtl">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport"<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MyBlocks Admin | Full Control</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Assistant:wght@400;700;800&display=swap');
+        body { font-family: 'Assistant', sans-serif; background: #f4f7fa; }
+        .field-style { @apply w-full p-4 bg-white border-2 border-slate-200 rounded-2xl outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-50 transition-all shadow-sm; }
+        .action-btn { @apply p-3 rounded-xl transition-all active:scale-90 flex items-center justify-center; }
+        .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 2000; align-items: center; justify-content: center; backdrop-filter: blur(5px); }
+        .modal-overlay.active { display: flex; }
+    </style>
+</head>
+<body class="p-4 md:p-10">
+
+    <div id="qrModal" class="modal-overlay" onclick="this.classList.remove('active')">
+        <div class="bg-white p-8 rounded-[2.5rem] text-center shadow-2xl" onclick="event.stopPropagation()">
+            <h3 class="text-xl font-black mb-4">קוד ה-QR שלך</h3>
+            <div id="qrcode" class="flex justify-center mb-6"></div>
+            <div class="flex gap-2">
+                <button id="downloadQR" class="flex-1 py-3 bg-indigo-600 text-white rounded-xl font-bold">שמור תמונה</button>
+                <button onclick="document.getElementById('qrModal').classList.remove('active')" class="flex-1 py-3 bg-slate-100 text-slate-500 rounded-xl">סגור</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="deleteModal" class="modal-overlay">
+        <div class="bg-white p-8 rounded-[2.5rem] max-w-sm w-full text-center">
+            <h3 class="text-2xl font-black mb-4 text-red-600">בטוח?</h3>
+            <p class="mb-6 text-slate-500">הפעולה תמחק את התוכן לצמיתות.</p>
+            <div class="flex gap-3">
+                <button id="confirmDeleteBtn" class="flex-1 py-3 bg-red-600 text-white rounded-xl font-bold">מחק</button>
+                <button onclick="document.getElementById('deleteModal').classList.remove('active')" class="flex-1 py-3 bg-slate-100 rounded-xl">ביטול</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="max-w-6xl mx-auto">
+        <header class="mb-10 flex flex-col md:flex-row justify-between items-center bg-white p-6 rounded-[2rem] shadow-sm">
+            <h1 class="text-3xl font-black text-slate-800">MyBlocks <span class="text-indigo-600 font-normal">Dashboard</span></h1>
+            <button onclick="openDeleteAll()" class="text-red-500 font-bold hover:underline">מחיקת כל התוכן במערכת</button>
+        </header>
+
+        <div class="bg-white p-8 rounded-[3rem] shadow-lg border border-slate-100 mb-12">
+            <input type="hidden" id="editId">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div>
+                    <label class="text-xs font-bold text-slate-400 mr-2 uppercase">מידע כללי</label>
+                    <input type="text" id="title" placeholder="כותרת *" class="field-style mt-1 mb-4">
+                    <select id="catSelect" class="field-style"></select>
+                </div>
+                <div>
+                    <label class="text-xs font-bold text-slate-400 mr-2 uppercase">תוכן וקישורים</label>
+                    <textarea id="desc" placeholder="תיאור..." class="field-style mt-1 h-[115px] resize-none"></textarea>
+                </div>
+                <div>
+                    <label class="text-xs font-bold text-slate-400 mr-2 uppercase">הגדרות מתקדמות</label>
+                    <div class="flex gap-2 mb-4">
+                        <input type="color" id="bgColor" value="#ffffff" class="w-16 h-14 p-1 bg-white border-2 border-slate-200 rounded-xl cursor-pointer">
+                        <input type="number" id="slideSpeed" placeholder="שניות" class="field-style flex-1 text-center" value="3">
+                    </div>
+                    <input type="url" id="externalUrl" placeholder="קישור חיצוני (https://...)" class="field-style text-left" dir="ltr">
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6 pt-6 border-t border-slate-50">
+                <div class="flex flex-col gap-2">
+                    <label class="text-xs font-bold text-slate-400">תזמון פרסום וסיום:</label>
+                    <div class="flex gap-2">
+                        <input type="datetime-local" id="scheduleDate" class="field-style text-xs">
+                        <input type="datetime-local" id="expiryDate" class="field-style text-xs">
+                    </div>
+                </div>
+                <div class="flex flex-col gap-2">
+                    <label class="text-xs font-bold text-slate-400">מדיה וסאונד:</label>
+                    <div class="flex gap-2 items-center">
+                        <input type="file" id="mediaFiles" multiple class="hidden">
+                        <button onclick="document.getElementById('mediaFiles').click()" class="flex-1 py-4 border-2 border-dashed border-indigo-200 rounded-2xl text-indigo-600 font-bold hover:bg-indigo-50">העלה תמונות/וידאו</button>
+                        <div class="bg-indigo-50 px-4 py-4 rounded-2xl flex items-center gap-3">
+                            <span class="text-xs font-bold text-indigo-700">סאונד:</span>
+                            <input type="checkbox" id="isMuted" class="w-5 h-5 accent-indigo-600">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <button onclick="save()" id="saveBtn" class="w-full mt-8 py-5 bg-indigo-600 text-white rounded-[2rem] font-black text-xl shadow-xl shadow-indigo-100 hover:bg-indigo-700 transition">שמור ועדכן עכשיו ✨</button>
+        </div>
+
+        <div id="canvas" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 pb-20"></div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js";
+        import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, doc, deleteDoc, updateDoc, getDocs } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore.js";
+        import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-storage.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyB0f0u0WqlScU5r9PE0wm0GkKA3f1MFHv8",
+            authDomain: "myblocksapp-a7d1c.firebaseapp.com",
+            projectId: "myblocksapp-a7d1c",
+            storageBucket: "myblocksapp-a7d1c.firebasestorage.app",
+            messagingSenderId: "273089143135",
+            appId: "1:273089143135:web:7544f1810bc21b4a5856ea"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const storage = getStorage(app);
+        let blocks = [];
+
+        onSnapshot(query(collection(db, "blocks"), orderBy("createdAt", "desc")), s => {
+            blocks = []; s.forEach(d => blocks.push({id: d.id, ...d.data()}));
+            renderCards();
+        });
+
+        window.renderCards = () => {
+            const container = document.getElementById('canvas'); container.innerHTML = '';
+            blocks.forEach(b => {
+                const shareUrl = window.location.origin + window.location.pathname.replace('index.html', '') + 'view.html?id=' + b.id;
+                const date = b.createdAt?.toDate ? b.createdAt.toDate().toLocaleDateString('he-IL') : 'היום';
+                const time = b.createdAt?.toDate ? b.createdAt.toDate().toLocaleTimeString('he-IL', {hour:'2-digit', minute:'2-digit'}) : '';
+
+                container.innerHTML += `
+                    <div class="bg-white rounded-[2.5rem] overflow-hidden shadow-sm border border-slate-100 flex flex-col group">
+                        <div class="h-44 bg-slate-100 overflow-hidden relative">
+                            ${b.mediaUrls?.[0]?.includes('.mp4') ? `<video src="${b.mediaUrls[0]}" class="w-full h-full object-cover"></video>` : `<img src="${b.mediaUrls?.[0] || ''}" class="w-full h-full object-cover">`}
+                            <div class="absolute bottom-3 right-3 bg-white/90 backdrop-blur px-3 py-1 rounded-full text-[10px] font-bold text-slate-600 shadow-sm">
+                                <i class="far fa-eye ml-1"></i> ${b.views || 0} צפיות
+                            </div>
+                        </div>
+                        <div class="p-6">
+                            <div class="flex justify-between items-start mb-4">
+                                <div>
+                                    <h3 class="font-black text-slate-800 text-lg leading-tight">${b.title}</h3>
+                                    <p class="text-[10px] text-slate-400 font-bold uppercase mt-1">${date} | ${time}</p>
+                                </div>
+                                <span class="bg-indigo-50 text-indigo-600 text-[10px] px-2 py-1 rounded-lg font-bold">${b.category}</span>
+                            </div>
+                            
+                            <div class="grid grid-cols-5 gap-2 mb-4">
+                                <button onclick="editBlock('${b.id}')" class="action-btn bg-amber-50 text-amber-500 hover:bg-amber-500 hover:text-white" title="עריכה"><i class="fas fa-edit"></i></button>
+                                <button onclick="window.open('${shareUrl}', '_blank')" class="action-btn bg-blue-50 text-blue-500 hover:bg-blue-500 hover:text-white" title="צפייה"><i class="fas fa-external-link-alt"></i></button>
+                                <button onclick="showQR('${shareUrl}')" class="action-btn bg-slate-50 text-slate-600 hover:bg-slate-800 hover:text-white" title="קוד QR"><i class="fas fa-qrcode"></i></button>
+                                <button onclick="copyToClipboard('${shareUrl}')" class="action-btn bg-green-50 text-green-600 hover:bg-green-600 hover:text-white" title="העתק קישור"><i class="fas fa-link"></i></button>
+                                <button onclick="openConfirmDelete('${b.id}')" class="action-btn bg-red-50 text-red-500 hover:bg-red-500 hover:text-white" title="מחיקה"><i class="fas fa-trash-alt"></i></button>
+                            </div>
+                        </div>
+                    </div>`;
+            });
+        };
+
+        window.save = async () => {
+            const btn = document.getElementById('saveBtn');
+            const editId = document.getElementById('editId').value;
+            btn.disabled = true; btn.innerText = "שומר...";
+            
+            try {
+                const files = document.getElementById('mediaFiles').files;
+                let mediaUrls = editId ? (blocks.find(x => x.id === editId).mediaUrls || []) : [];
+                
+                for(let f of files) {
+                    const r = ref(storage, `content/${Date.now()}_${f.name}`);
+                    await uploadBytes(r, f);
+                    mediaUrls.push(await getDownloadURL(r));
+                }
+
+                const data = {
+                    title: document.getElementById('title').value,
+                    category: document.getElementById('catSelect').value,
+                    description: document.getElementById('desc').value,
+                    url: document.getElementById('externalUrl').value,
+                    bgColor: document.getElementById('bgColor').value,
+                    slideSpeed: parseInt(document.getElementById('slideSpeed').value) || 3,
+                    scheduleDate: document.getElementById('scheduleDate').value,
+                    expiryDate: document.getElementById('expiryDate').value,
+                    isMuted: !document.getElementById('isMuted').checked,
+                    lastUpdated: Date.now(),
+                    createdAt: editId ? (blocks.find(x => x.id === editId).createdAt) : new Date(),
+                    views: editId ? (blocks.find(x => x.id === editId).views || 0) : 0
+                };
+
+                if(editId) await updateDoc(doc(db, "blocks", editId), data);
+                else await addDoc(collection(db, "blocks"), data);
+                location.reload();
+            } catch(e) { alert("שגיאה!"); btn.disabled = false; }
+        };
+
+        window.editBlock = id => {
+            const b = blocks.find(x => x.id === id);
+            document.getElementById('editId').value = b.id;
+            document.getElementById('title').value = b.title;
+            document.getElementById('desc').value = b.description;
+            document.getElementById('bgColor').value = b.bgColor || "#ffffff";
+            document.getElementById('slideSpeed').value = b.slideSpeed || 3;
+            document.getElementById('externalUrl').value = b.url || "";
+            document.getElementById('scheduleDate').value = b.scheduleDate || "";
+            document.getElementById('expiryDate').value = b.expiryDate || "";
+            document.getElementById('isMuted').checked = !b.isMuted;
+            window.scrollTo({top: 0, behavior: 'smooth'});
+        };
+
+        window.showQR = url => {
+            const qrdiv = document.getElementById('qrcode');
+            qrdiv.innerHTML = '';
+            const qr = new QRCode(qrdiv, { text: url, width: 200, height: 200 });
+            document.getElementById('qrModal').classList.add('active');
+            document.getElementById('downloadQR').onclick = () => {
+                const img = qrdiv.querySelector('img').src;
+                const link = document.createElement('a');
+                link.href = img; link.download = 'qrcode.png'; link.click();
+            };
+        };
+
+        window.copyToClipboard = url => {
+            navigator.clipboard.writeText(url);
+            alert("הקישור הועתק!");
+        };
+
+        window.openConfirmDelete = id => {
+            const m = document.getElementById('deleteModal');
+            m.classList.add('active');
+            document.getElementById('confirmDeleteBtn').onclick = async () => {
+                await deleteDoc(doc(db, "blocks", id));
+                m.classList.remove('active');
+            };
+        };
+
+        window.openDeleteAll = async () => {
+            if(confirm("למחוק את כל המערכת?")) {
+                const snap = await getDocs(collection(db, "blocks"));
+                snap.forEach(async d => await deleteDoc(doc(db, "blocks", d.id)));
+            }
+        };
+    </script>
+</body>
+</html> content="width=device-width, initial-scale=1.0">
     <title>MyBlocks Admin | Master Control</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
