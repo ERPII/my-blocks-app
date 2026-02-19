@@ -3,83 +3,72 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MyBlocks View</title>
+    <title>View Content</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Assistant:wght@400;800&display=swap');
-        body { font-family: 'Assistant', sans-serif; transition: background 1s ease; overflow-x: hidden; }
-        .media-item { display: none; width: 100%; max-height: 65vh; object-fit: contain; border-radius: 3rem; }
+        body { font-family: 'Assistant', sans-serif; transition: background 1s ease; }
+        .media-item { display: none; width: 100%; max-height: 60vh; object-fit: contain; border-radius: 2.5rem; }
         .media-item.active { display: block; animation: fadeIn 0.8s ease; }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
     </style>
 </head>
-<body class="flex flex-col items-center justify-center p-6 min-h-screen">
+<body class="min-h-screen flex flex-col items-center justify-center p-6">
 
-    <div id="statusBox" class="hidden text-center p-12 bg-white/90 backdrop-blur shadow-2xl rounded-[4rem] max-w-2xl border-b-8 border-indigo-600">
-        <h1 id="statusText" class="text-4xl font-black text-slate-800"></h1>
+    <div id="statusBox" class="hidden text-center p-12 bg-white shadow-2xl rounded-[3rem] max-w-2xl border-b-8">
+        <h1 id="statusText" class="text-3xl font-black"></h1>
     </div>
 
-    <div id="content" class="max-w-5xl w-full hidden text-center">
-        <div id="mediaBox" class="mb-12 flex justify-center"></div>
-        <h1 id="title" class="text-6xl font-black mb-6 text-slate-900 leading-tight"></h1>
-        <p id="desc" class="text-2xl text-slate-700 mb-8 max-w-2xl mx-auto"></p>
-        
-        <div id="customHtmlBox" class="my-10"></div>
-        
-        <div class="mt-12">
-            <a id="mainLink" href="#" target="_blank" class="inline-block px-16 py-6 bg-indigo-600 text-white rounded-[3rem] font-black text-3xl shadow-2xl hover:scale-105 transition-transform">
-                מעבר לקישור
-            </a>
-        </div>
+    <div id="content" class="max-w-4xl w-full hidden text-center">
+        <div id="mediaBox" class="mb-10"></div>
+        <h1 id="title" class="text-5xl font-black mb-4"></h1>
+        <p id="desc" class="text-xl text-slate-700 mb-8"></p>
+        <div id="customHtmlBox" class="my-6"></div>
+        <a id="mainLink" href="#" target="_blank" class="inline-block px-12 py-5 bg-indigo-600 text-white rounded-[2rem] font-bold text-2xl shadow-xl">לחץ כאן</a>
     </div>
+
+    <footer id="footer" class="fixed bottom-6 text-slate-400 font-bold"></footer>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js";
         import { getFirestore, doc, onSnapshot, updateDoc, increment } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore.js";
 
-        const firebaseConfig = {
-            apiKey: "AIzaSyB0f0u0WqlScU5r9PE0wm0GkKA3f1MFHv8",
-            authDomain: "myblocksapp-a7d1c.firebaseapp.com",
-            projectId: "myblocksapp-a7d1c",
-            storageBucket: "myblocksapp-a7d1c.firebasestorage.app",
-            messagingSenderId: "273089143135",
-            appId: "1:273089143135:web:7544f1810bc21b4a5856ea"
-        };
-
+        const firebaseConfig = { /* אותו הקוד */ };
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
-        const urlParams = new URLSearchParams(window.location.search);
-        const id = urlParams.get('id');
+        const id = new URLSearchParams(window.location.search).get('id');
+
+        // טעינת הגדרות פוטר וצבעים
+        onSnapshot(doc(db, "settings", "general"), snap => {
+            if(snap.exists()){
+                const d = snap.data();
+                document.getElementById('footer').innerText = d.footerText;
+                document.getElementById('statusBox').style.borderColor = d.brandColor;
+            }
+        });
 
         if(id) {
             updateDoc(doc(db, "blocks", id), { views: increment(1) });
             onSnapshot(doc(db, "blocks", id), snap => {
-                if(snap.exists()) checkTiming(snap.data());
+                if(snap.exists()) {
+                    const d = snap.data();
+                    const now = new Date();
+                    const start = d.scheduleDate ? new Date(d.scheduleDate) : null;
+                    const end = d.expiryDate ? new Date(d.expiryDate) : null;
+
+                    if(start && now < start) showStatus(d.preMsg || "בקרוב...");
+                    else if(end && now > end) showStatus(d.postMsg || "נגמר.");
+                    else render(d);
+                }
             });
         }
 
-        function checkTiming(d) {
-            const now = new Date();
-            const start = d.scheduleDate ? new Date(d.scheduleDate) : null;
-            const end = d.expiryDate ? new Date(d.expiryDate) : null;
-
-            if(start && now < start) {
-                showStatus(d.preMsg || "התוכן יעלה בקרוב...");
-            } else if(end && now > end) {
-                showStatus(d.postMsg || "פג תוקף התוכן.");
-            } else {
-                render(d);
-            }
-        }
-
-        function showStatus(msg) {
-            document.getElementById('content').classList.add('hidden');
+        function showStatus(m) {
             document.getElementById('statusBox').classList.remove('hidden');
-            document.getElementById('statusText').innerText = msg;
+            document.getElementById('statusText').innerText = m;
         }
 
         function render(d) {
-            document.getElementById('statusBox').classList.add('hidden');
             document.getElementById('content').classList.remove('hidden');
             document.body.style.backgroundColor = d.bgColor;
             document.getElementById('title').innerText = d.title;
@@ -92,7 +81,7 @@
                 img.src = u; img.className = `media-item ${i===0?'active':''}`;
                 box.appendChild(img);
             });
-
+            
             if(d.url) document.getElementById('mainLink').href = d.url;
             else document.getElementById('mainLink').style.display = 'none';
 
@@ -100,7 +89,6 @@
                 let idx = 0;
                 setInterval(() => {
                     const items = document.querySelectorAll('.media-item');
-                    if(!items.length) return;
                     items[idx].classList.remove('active');
                     idx = (idx + 1) % items.length;
                     items[idx].classList.add('active');
