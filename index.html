@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MyBlocks Admin Pro</title>
+    <title>MyBlocks Admin Pro | 2026</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
@@ -20,78 +20,81 @@
 </head>
 <body class="p-4 md:p-8">
 
-    <div id="toast">✅ הועתק!</div>
+    <div id="toast">✅ הפעולה בוצעה בהצלחה!</div>
 
     <div id="qrModal" class="modal" onclick="closeModal('qrModal')">
         <div class="bg-white p-8 rounded-[2rem] shadow-2xl text-center" onclick="event.stopPropagation()">
-            <h3 class="text-xl font-black mb-4">קוד QR</h3>
+            <h3 class="text-xl font-black mb-4 text-slate-800">קוד QR להפצה</h3>
             <div id="qrcode" class="flex justify-center mb-6"></div>
             <div class="flex gap-2">
                 <button id="downloadQR" class="flex-1 bg-indigo-600 text-white py-3 rounded-xl font-bold">הורד תמונה</button>
-                <button onclick="closeModal('qrModal')" class="flex-1 bg-slate-100 py-3 rounded-xl font-bold">סגור</button>
+                <button onclick="closeModal('qrModal')" class="flex-1 bg-slate-100 py-3 rounded-xl font-bold text-slate-500">סגור</button>
             </div>
         </div>
     </div>
 
     <div class="max-w-6xl mx-auto">
-        <header class="mb-10 text-center md:text-right">
-            <h1 class="text-4xl font-black text-slate-800">MyBlocks <span class="text-indigo-600">Pro</span></h1>
-            <p class="text-slate-400 font-bold text-sm mt-1">ניהול תוכן חכם והפצה מהירה</p>
+        <header class="flex flex-col md:flex-row justify-between items-center mb-10 gap-4">
+            <div>
+                <h1 class="text-4xl font-black text-slate-800">MyBlocks <span class="text-indigo-600">Pro</span></h1>
+                <p class="text-slate-400 font-bold text-sm">מערכת ניהול תוכן חכמה ומסונכרנת</p>
+            </div>
         </header>
 
         <div class="bg-white p-6 md:p-8 rounded-[2.5rem] shadow-xl mb-12 border border-slate-100">
-            <h2 id="formHeader" class="text-xl font-black mb-6 text-slate-700">צור קובייה חדשה</h2>
+            <h2 id="formHeader" class="text-xl font-black mb-6 text-slate-700">צור/ערוך קובייה</h2>
             <input type="hidden" id="editId">
             
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div class="space-y-4">
                     <input type="text" id="title" placeholder="כותרת הקובייה *" class="w-full p-4 bg-slate-50 rounded-2xl border-none shadow-inner outline-none focus:ring-2 focus:ring-indigo-500">
                     <select id="catSelect" class="w-full p-4 bg-slate-50 rounded-2xl border-none shadow-inner outline-none"></select>
                     <input type="url" id="externalUrl" placeholder="קישור חיצוני (https://...)" class="w-full p-4 bg-slate-50 rounded-2xl border-none shadow-inner text-left outline-none" dir="ltr">
                 </div>
                 <div class="space-y-4">
-                    <textarea id="desc" placeholder="תיאור..." class="w-full p-4 bg-slate-50 rounded-2xl h-20 border-none shadow-inner resize-none outline-none"></textarea>
-                    <textarea id="htmlContent" placeholder="קוד HTML חופשי..." class="w-full p-4 bg-indigo-50/50 rounded-2xl h-24 border-none shadow-inner font-mono text-xs outline-none" dir="ltr"></textarea>
+                    <textarea id="desc" placeholder="תיאור חופשי..." class="w-full p-4 bg-slate-50 rounded-2xl h-20 border-none shadow-inner resize-none outline-none"></textarea>
+                    <textarea id="htmlContent" placeholder="הזרקת קוד HTML (Embed וכו')..." class="w-full p-4 bg-indigo-50/40 rounded-2xl h-24 border-none shadow-inner font-mono text-xs outline-none" dir="ltr"></textarea>
                 </div>
                 <div class="space-y-4">
-                    <div class="flex gap-2">
-                        <div class="flex-1 text-center">
-                            <label class="text-[10px] font-bold text-slate-400 block mb-1 uppercase">רקע דף</label>
-                            <input type="color" id="bgColor" value="#ffffff" class="w-full h-10 bg-white rounded-xl cursor-pointer border shadow-sm p-1">
+                    <div class="grid grid-cols-2 gap-2">
+                        <div>
+                            <label class="text-[10px] font-black text-slate-400 block mb-1 uppercase tracking-tighter">צבע רקע</label>
+                            <input type="color" id="bgColor" value="#ffffff" class="w-full h-10 bg-white rounded-xl cursor-pointer border p-1">
                         </div>
-                        <div class="flex-1 text-center">
-                            <label class="text-[10px] font-bold text-slate-400 block mb-1 uppercase">תאריך תפוגה</label>
-                            <input type="date" id="expiryDate" class="w-full h-10 bg-slate-50 rounded-xl px-2 text-[10px] border-none shadow-inner outline-none">
+                        <div>
+                            <label class="text-[10px] font-black text-slate-400 block mb-1 uppercase tracking-tighter">מהירות סליידר (שניות)</label>
+                            <input type="number" id="slideSpeed" value="3" min="1" class="w-full h-10 bg-slate-50 rounded-xl px-2 text-center border-none shadow-inner outline-none">
                         </div>
                     </div>
                     <div class="relative h-24 border-2 border-dashed border-slate-200 rounded-2xl flex flex-col items-center justify-center hover:bg-indigo-50 transition cursor-pointer">
                         <input type="file" id="files" multiple class="absolute inset-0 opacity-0 cursor-pointer">
                         <i class="fas fa-plus-circle text-indigo-400 text-xl mb-1"></i>
-                        <span id="fileNameDisplay" class="text-slate-400 text-[10px] font-bold uppercase tracking-wider">הוסף תמונות גלריה</span>
+                        <span id="fileNameDisplay" class="text-slate-400 text-[10px] font-black">העלה תמונות גלריה</span>
                     </div>
                 </div>
             </div>
 
-            <div id="mediaManager" class="mt-6 hidden">
-                <p class="text-[10px] font-black text-slate-400 mb-3 uppercase tracking-widest">ניהול תמונות בקובייה:</p>
+            <div id="mediaManager" class="mt-6 hidden border-t pt-4">
+                <p class="text-[10px] font-black text-slate-400 mb-3 uppercase tracking-widest">תמונות קיימות (לחץ למחיקה):</p>
                 <div id="imagesPreview" class="flex flex-wrap gap-3 overflow-x-auto p-2 no-scrollbar"></div>
             </div>
 
             <div class="flex gap-3 mt-8">
-                <button onclick="save()" id="saveBtn" class="bg-indigo-600 text-white px-12 py-4 rounded-2xl font-black shadow-lg hover:bg-indigo-700 transition active:scale-95">שמור קובייה ✨</button>
-                <button id="cancelEditBtn" onclick="resetForm()" class="hidden bg-slate-100 text-slate-500 px-8 py-4 rounded-2xl font-bold hover:bg-slate-200 transition">ביטול</button>
+                <button onclick="save()" id="saveBtn" class="bg-indigo-600 text-white px-12 py-4 rounded-2xl font-black shadow-lg hover:bg-indigo-700 transition active:scale-95">שמור והפץ ✨</button>
+                <button id="cancelEditBtn" onclick="resetForm()" class="hidden bg-slate-100 text-slate-500 px-8 py-4 rounded-2xl font-bold">ביטול עריכה</button>
             </div>
         </div>
 
-        <div id="catFilter" class="flex gap-3 mb-10 overflow-x-auto pb-2 no-scrollbar"></div>
+        <div id="catFilter" class="flex gap-3 mb-8 overflow-x-auto pb-2 no-scrollbar"></div>
         <div id="canvas" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 pb-32"></div>
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js";
-        import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, doc, deleteDoc, setDoc, updateDoc } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, doc, deleteDoc, updateDoc } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore.js";
         import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-storage.js";
 
+        // Firebase Config (Your credentials)
         const firebaseConfig = {
             apiKey: "AIzaSyB0f0u0WqlScU5r9PE0wm0GkKA3f1MFHv8",
             authDomain: "myblocksapp-a7d1c.firebaseapp.com",
@@ -130,50 +133,28 @@
                 const d = b.createdAt?.toDate ? b.createdAt.toDate() : new Date();
                 
                 container.innerHTML += `
-                    <div class="bg-white rounded-[2.5rem] overflow-hidden shadow-sm border border-slate-100 flex flex-col group hover:shadow-2xl hover:-translate-y-1 transition-all duration-300">
+                    <div class="bg-white rounded-[2.5rem] overflow-hidden shadow-sm border border-slate-100 flex flex-col group hover:shadow-2xl transition-all">
                         <div class="h-44 bg-slate-50 relative overflow-hidden">
                             ${b.mediaUrls?.length ? `<img src="${b.mediaUrls[0]}" class="w-full h-full object-cover">` : `<div class="w-full h-full flex items-center justify-center text-slate-200"><i class="fas fa-images fa-3x"></i></div>`}
-                            <div class="absolute top-4 right-4 bg-indigo-600/90 text-white px-3 py-1 rounded-full text-[10px] font-black tracking-widest uppercase">${b.category}</div>
-                            ${b.mediaUrls?.length > 1 ? `<div class="absolute bottom-2 left-2 bg-black/50 text-white px-2 py-1 rounded-lg text-[9px] font-bold">+${b.mediaUrls.length - 1} תמונות</div>` : ''}
+                            <div class="absolute top-4 right-4 bg-indigo-600 text-white px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest">${b.category}</div>
                         </div>
                         <div class="p-6">
                             <h3 class="font-black text-slate-800 text-lg mb-1 line-clamp-1">${b.title}</h3>
                             <div class="flex items-center gap-3 text-[10px] font-bold text-slate-300 mb-5">
-                                <span><i class="far fa-clock ml-1"></i> ${d.toLocaleDateString('he-IL')} | ${d.toLocaleTimeString('he-IL', {hour:'2-digit', minute:'2-digit'})}</span>
+                                <span><i class="far fa-clock ml-1"></i> ${d.toLocaleTimeString('he-IL', {hour:'2-digit', minute:'2-digit'})}</span>
                                 <span class="text-indigo-400"><i class="far fa-eye ml-1"></i> ${b.views || 0} צפיות</span>
                             </div>
                             <div class="grid grid-cols-4 gap-2 mb-4">
                                 <button onclick="editBlock('${b.id}')" class="p-3 bg-slate-50 text-amber-500 rounded-2xl hover:bg-amber-500 hover:text-white transition"><i class="fas fa-edit"></i></button>
+                                <button onclick="window.open('${shareUrl}', '_blank')" class="p-3 bg-slate-50 text-blue-500 rounded-2xl hover:bg-blue-500 hover:text-white transition" title="צפייה מהירה"><i class="fas fa-eye"></i></button>
                                 <button onclick="showQR('${shareUrl}')" class="p-3 bg-slate-50 text-slate-600 rounded-2xl hover:bg-slate-600 hover:text-white transition"><i class="fas fa-qrcode"></i></button>
-                                <a href="https://wa.me/?text=${encodeURIComponent(b.title + ': ' + shareUrl)}" target="_blank" class="p-3 bg-slate-50 text-green-500 rounded-2xl hover:bg-green-500 hover:text-white transition text-center"><i class="fab fa-whatsapp"></i></a>
                                 <button onclick="deleteB('${b.id}', ${JSON.stringify(b.mediaUrls || [])})" class="p-3 bg-slate-50 text-red-400 rounded-2xl hover:bg-red-500 hover:text-white transition"><i class="fas fa-trash-alt"></i></button>
                             </div>
-                            <button onclick="copyLink('${shareUrl}')" class="w-full py-4 bg-indigo-50 text-indigo-600 rounded-2xl text-xs font-black hover:bg-indigo-600 hover:text-white transition uppercase tracking-wider">העתק קישור להפצה</button>
+                            <button onclick="copyLink('${shareUrl}')" class="w-full py-4 bg-indigo-50 text-indigo-600 rounded-2xl text-xs font-black hover:bg-indigo-600 hover:text-white transition uppercase tracking-widest">העתק קישור להפצה</button>
                         </div>
                     </div>
                 `;
             });
-        };
-
-        // ניהול תצוגה מקדימה ומחיקת תמונות
-        const updateMediaPreview = () => {
-            const container = document.getElementById('imagesPreview');
-            const manager = document.getElementById('mediaManager');
-            container.innerHTML = '';
-            
-            if (currentUrls.length > 0) {
-                manager.classList.remove('hidden');
-                currentUrls.forEach((url, index) => {
-                    container.innerHTML += `
-                        <div class="relative flex-shrink-0 group">
-                            <img src="${url}" class="preview-img">
-                            <button onclick="removeImage(${index})" class="absolute -top-2 -left-2 w-6 h-6 bg-red-500 text-white rounded-full text-[10px] shadow-lg border-2 border-white"><i class="fas fa-times"></i></button>
-                        </div>
-                    `;
-                });
-            } else {
-                manager.classList.add('hidden');
-            }
         };
 
         window.removeImage = (index) => {
@@ -181,16 +162,30 @@
             updateMediaPreview();
         };
 
+        const updateMediaPreview = () => {
+            const container = document.getElementById('imagesPreview');
+            const manager = document.getElementById('mediaManager');
+            container.innerHTML = '';
+            if (currentUrls.length > 0) {
+                manager.classList.remove('hidden');
+                currentUrls.forEach((url, index) => {
+                    container.innerHTML += `
+                        <div class="relative group cursor-pointer" onclick="removeImage(${index})">
+                            <img src="${url}" class="preview-img hover:opacity-50 transition">
+                            <div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 text-red-500"><i class="fas fa-trash"></i></div>
+                        </div>`;
+                });
+            } else manager.classList.add('hidden');
+        };
+
         window.save = async () => {
             const btn = document.getElementById('saveBtn');
             const files = document.getElementById('files').files;
             const editId = document.getElementById('editId').value;
-            
-            btn.disabled = true; btn.innerText = "מעבד נתונים...";
+            btn.disabled = true; btn.innerText = "מעלה נתונים...";
             
             try {
                 let uploadedUrls = [...currentUrls];
-                
                 if(files.length > 0) {
                     const uploadPromises = Array.from(files).map(async (f) => {
                         const r = ref(storage, `content/${Date.now()}_${f.name}`);
@@ -209,7 +204,8 @@
                     htmlContent: document.getElementById('htmlContent').value,
                     mediaUrls: uploadedUrls,
                     bgColor: document.getElementById('bgColor').value,
-                    expiryDate: document.getElementById('expiryDate').value,
+                    slideSpeed: parseInt(document.getElementById('slideSpeed').value) || 3,
+                    lastUpdated: Date.now(),
                     createdAt: editId ? (blocks.find(x => x.id === editId).createdAt) : new Date(),
                     views: editId ? (blocks.find(x => x.id === editId).views || 0) : 0
                 };
@@ -218,8 +214,9 @@
                 else await addDoc(collection(db, "blocks"), data);
                 
                 resetForm();
-            } catch(e) { alert("שגיאה בשמירה!"); }
-            finally { btn.disabled = false; btn.innerText = "שמור קובייה ✨"; }
+                showToast("✅ נשמר בהצלחה ומסונכרן!");
+            } catch(e) { alert("שגיאה!"); }
+            finally { btn.disabled = false; btn.innerText = "שמור והפץ ✨"; }
         };
 
         window.editBlock = (id) => {
@@ -231,11 +228,9 @@
             document.getElementById('desc').value = b.description || "";
             document.getElementById('htmlContent').value = b.htmlContent || "";
             document.getElementById('bgColor').value = b.bgColor || "#ffffff";
-            document.getElementById('expiryDate').value = b.expiryDate || "";
-            
+            document.getElementById('slideSpeed').value = b.slideSpeed || 3;
             currentUrls = [...(b.mediaUrls || [])];
             updateMediaPreview();
-
             document.getElementById('formHeader').innerText = "עריכת קובייה";
             document.getElementById('cancelEditBtn').classList.remove('hidden');
             window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -266,12 +261,6 @@
             document.getElementById('qrModal').classList.add('active');
         };
 
-        window.copyLink = (l) => {
-            navigator.clipboard.writeText(l);
-            const t = document.getElementById('toast');
-            t.className = "show"; setTimeout(() => t.className = "", 3000);
-        };
-
         window.deleteB = async (id, urls) => {
             if(confirm("למחוק לצמיתות?")) {
                 for(let url of urls) await deleteObject(ref(storage, url)).catch(()=>{});
@@ -279,10 +268,16 @@
             }
         };
 
+        const showToast = (msg) => {
+            const t = document.getElementById('toast');
+            t.innerText = msg; t.className = "show"; setTimeout(() => t.className = "", 3000);
+        };
+
+        window.copyLink = (l) => { navigator.clipboard.writeText(l); showToast("✅ הקישור הועתק!"); };
         window.setFilter = (c) => { currentFilter = c; renderCards(); };
         window.closeModal = (id) => document.getElementById(id).classList.remove('active');
         document.getElementById('files').onchange = (e) => {
-            document.getElementById('fileNameDisplay').innerText = `נבחרו ${e.target.files.length} תמונות חדשות`;
+            document.getElementById('fileNameDisplay').innerText = `נבחרו ${e.target.files.length} תמונות`;
         };
     </script>
 </body>
