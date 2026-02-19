@@ -9,82 +9,76 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Assistant:wght@400;700;800&display=swap');
-        body { font-family: 'Assistant', sans-serif; background: #f1f5f9; scroll-behavior: smooth; }
+        body { font-family: 'Assistant', sans-serif; background: #f1f5f9; }
         .active-cat { background: #4f46e5 !important; color: white !important; }
         .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 1000; align-items: center; justify-content: center; backdrop-filter: blur(8px); }
         .modal.active { display: flex; }
         #toast { visibility: hidden; min-width: 250px; background: #1e293b; color: #fff; text-align: center; border-radius: 1rem; padding: 16px; position: fixed; z-index: 2000; left: 50%; bottom: 30px; transform: translateX(-50%); opacity: 0; transition: 0.4s; }
         #toast.show { visibility: visible; opacity: 1; }
-        .block-card { transition: all 0.3s ease; }
-        .grid-view { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1.5rem; }
-        .list-view { display: flex; flex-direction: column; gap: 1rem; }
-        .list-view .block-card { flex-direction: row; height: 100px; }
-        .list-view .block-img-cont { width: 100px; height: 100% !important; }
-        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .grid-view { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 1.5rem; }
     </style>
 </head>
 <body class="p-4 md:p-8">
 
-    <div id="toast">✅ הקישור הועתק!</div>
+    <div id="toast">✅ הועתק!</div>
 
     <div id="qrModal" class="modal" onclick="closeModal('qrModal')">
         <div class="bg-white p-8 rounded-[2rem] shadow-2xl text-center" onclick="event.stopPropagation()">
-            <h3 class="text-xl font-black mb-4">סרוק שיתוף</h3>
+            <h3 class="text-xl font-black mb-4">קוד QR</h3>
             <div id="qrcode" class="flex justify-center mb-6"></div>
-            <button onclick="closeModal('qrModal')" class="w-full bg-slate-100 py-3 rounded-xl font-bold">סגור</button>
+            <div class="flex gap-2">
+                <button id="downloadQR" class="flex-1 bg-indigo-600 text-white py-3 rounded-xl font-bold">הורד תמונה</button>
+                <button onclick="closeModal('qrModal')" class="flex-1 bg-slate-100 py-3 rounded-xl font-bold">סגור</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="catModal" class="modal">
+        <div class="bg-white p-8 rounded-[2rem] w-96 text-center shadow-2xl">
+            <h3 class="text-xl font-black mb-4">ניהול קטגוריות</h3>
+            <div class="flex gap-2 mb-6">
+                <input type="text" id="newCatName" placeholder="שם חדש..." class="flex-1 p-3 bg-slate-50 rounded-xl border outline-none">
+                <button onclick="confirmAddCategory()" class="bg-indigo-600 text-white px-4 rounded-xl font-bold">הוסף</button>
+            </div>
+            <div id="catList" class="max-h-48 overflow-y-auto mb-6 flex flex-col gap-2"></div>
+            <button onclick="closeModal('catModal')" class="w-full bg-slate-100 py-3 rounded-xl font-bold">סגור</button>
         </div>
     </div>
 
     <div class="max-w-6xl mx-auto">
-        <header class="flex flex-col md:flex-row justify-between items-center mb-10 gap-4">
-            <h1 class="text-4xl font-black text-slate-800 tracking-tight">הקוביות שלי <span class="text-indigo-600 text-sm font-normal block md:inline">Pro Dashboard</span></h1>
-            <div class="flex gap-2 w-full md:w-auto">
-                <input type="text" id="searchInput" oninput="renderCards()" placeholder="חפש קובייה..." class="w-full md:w-64 p-4 rounded-2xl border-none shadow-sm outline-none focus:ring-2 focus:ring-indigo-500">
-                <button onclick="toggleView()" class="bg-white p-4 rounded-2xl shadow-sm text-slate-400 hover:text-indigo-600 transition"><i id="viewIcon" class="fas fa-list"></i></button>
-            </div>
+        <header class="flex justify-between items-center mb-10">
+            <h1 class="text-3xl font-black text-slate-800">MyBlocks <span class="text-indigo-600 text-sm">V3</span></h1>
+            <button onclick="openCatManager()" class="bg-white px-6 py-3 rounded-2xl shadow-sm font-bold text-slate-600 hover:bg-indigo-50 transition"><i class="fas fa-tags ml-2"></i>ניהול קטגוריות</button>
         </header>
 
-        <div class="bg-white p-6 md:p-8 rounded-[2.5rem] shadow-xl mb-12 border border-slate-100">
-            <h2 id="formTitle" class="text-xl font-black mb-6 text-slate-700">יצירת קובייה והגדרות קישור</h2>
+        <div class="bg-white p-8 rounded-[2.5rem] shadow-xl mb-12 border border-slate-100">
             <input type="hidden" id="editId">
-            
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div class="space-y-4">
-                    <input type="text" id="title" placeholder="כותרת הקובייה *" class="w-full p-4 bg-slate-50 rounded-2xl border-none shadow-inner outline-none focus:ring-2 focus:ring-indigo-400">
+                    <input type="text" id="title" placeholder="כותרת *" class="w-full p-4 bg-slate-50 rounded-2xl border-none shadow-inner outline-none">
                     <select id="catSelect" class="w-full p-4 bg-slate-50 rounded-2xl border-none shadow-inner outline-none"></select>
-                    <input type="url" id="externalUrl" placeholder="קישור לכפתור (https://...)" class="w-full p-4 bg-slate-50 rounded-2xl border-none shadow-inner outline-none text-left" dir="ltr">
+                    <input type="url" id="externalUrl" placeholder="קישור כפתור (https://...)" class="w-full p-4 bg-slate-50 rounded-2xl border-none shadow-inner text-left" dir="ltr">
                 </div>
-
                 <div class="space-y-4">
-                    <textarea id="desc" placeholder="תיאור קצר..." class="w-full p-4 bg-slate-50 rounded-2xl h-20 border-none shadow-inner outline-none resize-none"></textarea>
-                    <textarea id="htmlContent" placeholder="הזרקת קוד HTML (לדוגמה: <iframe> או עיצוב חופשי)" class="w-full p-4 bg-indigo-50 rounded-2xl h-24 border-none shadow-inner outline-none resize-none text-xs font-mono" dir="ltr"></textarea>
+                    <textarea id="desc" placeholder="תיאור..." class="w-full p-4 bg-slate-50 rounded-2xl h-20 border-none shadow-inner resize-none"></textarea>
+                    <textarea id="htmlContent" placeholder="קוד HTML חופשי..." class="w-full p-4 bg-indigo-50 rounded-2xl h-24 border-none shadow-inner font-mono text-xs" dir="ltr"></textarea>
                 </div>
-
                 <div class="space-y-4">
-                    <div class="flex gap-4">
-                        <div class="flex-1">
-                            <label class="text-[10px] font-bold text-slate-400 mr-2 uppercase">צבע רקע דף</label>
-                            <input type="color" id="bgColor" value="#ffffff" class="w-full h-12 bg-slate-50 rounded-xl border-none cursor-pointer">
-                        </div>
-                        <div class="flex-1">
-                            <label class="text-[10px] font-bold text-slate-400 mr-2 uppercase">תוקף (אופציונלי)</label>
-                            <input type="date" id="expiryDate" class="w-full h-12 bg-slate-50 rounded-xl border-none text-[10px] px-2 outline-none">
-                        </div>
+                    <div class="flex gap-2">
+                        <input type="color" id="bgColor" value="#ffffff" class="w-12 h-12 bg-slate-50 rounded-xl cursor-pointer">
+                        <input type="date" id="expiryDate" class="flex-1 h-12 bg-slate-50 rounded-xl px-2 text-xs border-none outline-none">
                     </div>
-                    <div class="relative h-20 border-2 border-dashed border-slate-200 rounded-2xl flex items-center justify-center hover:bg-indigo-50 transition cursor-pointer">
-                        <input type="file" id="file" class="absolute inset-0 opacity-0 cursor-pointer">
-                        <span id="fileNameDisplay" class="text-slate-400 text-sm font-bold"><i class="fas fa-image mr-2"></i> תמונת קאבר</span>
+                    <div class="relative h-24 border-2 border-dashed border-slate-200 rounded-2xl flex flex-col items-center justify-center hover:bg-indigo-50 transition cursor-pointer">
+                        <input type="file" id="files" multiple class="absolute inset-0 opacity-0 cursor-pointer">
+                        <i class="fas fa-images text-slate-300 mb-1"></i>
+                        <span id="fileNameDisplay" class="text-slate-400 text-[10px] font-bold">העלה תמונות (ניתן לבחור כמה)</span>
                     </div>
                 </div>
             </div>
-
-            <div class="flex gap-3 mt-8">
-                <button onclick="save()" id="saveBtn" class="bg-indigo-600 text-white px-12 py-4 rounded-2xl font-black hover:bg-indigo-700 shadow-lg transition active:scale-95">שמור והפץ ✨</button>
-                <button id="cancelEditBtn" onclick="resetForm()" class="hidden bg-slate-100 text-slate-500 px-8 py-4 rounded-2xl font-bold">ביטול</button>
-            </div>
+            <button onclick="save()" id="saveBtn" class="mt-8 bg-indigo-600 text-white px-12 py-4 rounded-2xl font-black shadow-lg hover:bg-indigo-700 transition">שמור והפץ ✨</button>
         </div>
 
-        <div id="catFilter" class="flex gap-3 mb-8 overflow-x-auto pb-2 no-scrollbar"></div>
+        <div id="catFilter" class="flex gap-3 mb-8 overflow-x-auto pb-2"></div>
         <div id="canvas" class="grid-view pb-24"></div>
     </div>
 
@@ -105,62 +99,50 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
         const storage = getStorage(app);
-        let blocks = [];
-        let currentFilter = 'הכל';
-        let isGridView = true;
+        let blocks = [], categories = [], currentFilter = 'הכל';
 
-        // Categories Listener
         onSnapshot(collection(db, "categories"), (s) => {
-            const sel = document.getElementById('catSelect'), fil = document.getElementById('catFilter');
+            categories = []; s.forEach(d => categories.push(d.id));
+            const sel = document.getElementById('catSelect'), fil = document.getElementById('catFilter'), list = document.getElementById('catList');
             sel.innerHTML = '<option value="כללי">כללי</option>';
             fil.innerHTML = `<button onclick="setFilter('הכל')" class="filter-btn ${currentFilter==='הכל'?'active-cat':''} px-6 py-2 rounded-xl bg-white shadow-sm font-bold text-sm">הכל</button>`;
-            s.forEach(d => {
-                sel.innerHTML += `<option value="${d.id}">${d.id}</option>`;
-                fil.innerHTML += `<button onclick="setFilter('${d.id}')" class="filter-btn ${currentFilter===d.id?'active-cat':''} px-6 py-2 rounded-xl bg-white shadow-sm font-bold text-sm">${d.id}</button>`;
+            list.innerHTML = '';
+            categories.forEach(c => {
+                sel.innerHTML += `<option value="${c}">${c}</option>`;
+                fil.innerHTML += `<button onclick="setFilter('${c}')" class="filter-btn ${currentFilter===c?'active-cat':''} px-6 py-2 rounded-xl bg-white shadow-sm font-bold text-sm">${c}</button>`;
+                list.innerHTML += `<div class="flex justify-between items-center p-3 bg-slate-50 rounded-xl"><span>${c}</span><button onclick="deleteCategory('${c}')" class="text-red-400 hover:text-red-600"><i class="fas fa-trash-alt"></i></button></div>`;
             });
         });
 
-        // Blocks Listener
         onSnapshot(query(collection(db, "blocks"), orderBy("createdAt", "desc")), (s) => {
-            blocks = [];
-            s.forEach(d => blocks.push({id: d.id, ...d.data()}));
+            blocks = []; s.forEach(d => blocks.push({id: d.id, ...d.data()}));
             renderCards();
         });
 
         window.renderCards = () => {
-            const search = document.getElementById('searchInput').value.toLowerCase();
             const container = document.getElementById('canvas');
-            container.className = isGridView ? 'grid-view pb-24' : 'list-view pb-24';
             container.innerHTML = '';
-
-            blocks.filter(b => (currentFilter === 'הכל' || b.category === currentFilter) && b.title.toLowerCase().includes(search))
-            .forEach(b => {
+            blocks.filter(b => currentFilter === 'הכל' || b.category === currentFilter).forEach(b => {
                 const baseUrl = window.location.origin + window.location.pathname.replace('index.html', '');
-                const shareUrl = (baseUrl.endsWith('/') ? baseUrl : baseUrl + '/') + 'view.html?id=' + b.id;
-                const dateObj = b.createdAt?.toDate ? b.createdAt.toDate() : new Date(b.createdAt);
-
+                const shareUrl = baseUrl + 'view.html?id=' + b.id;
+                
                 container.innerHTML += `
-                    <div class="block-card bg-white rounded-[2rem] overflow-hidden shadow-sm hover:shadow-xl border border-slate-100 flex flex-col group relative">
-                        <div class="block-img-cont h-40 bg-white relative overflow-hidden flex-shrink-0">
-                            ${b.mediaUrl ? `<img src="${b.mediaUrl}" class="w-full h-full object-cover">` : `<div class="w-full h-full bg-slate-50 flex items-center justify-center text-slate-200"><i class="fas fa-code fa-2xl"></i></div>`}
-                            <div class="absolute inset-0 bg-black/60 flex items-center justify-center opacity-0 group-hover:opacity-100 transition gap-2">
-                                <a href="${shareUrl}" target="_blank" class="w-10 h-10 bg-white rounded-full flex items-center justify-center text-indigo-600 hover:scale-110 transition"><i class="fas fa-eye"></i></a>
-                                <button onclick="editBlock('${b.id}')" class="w-10 h-10 bg-white rounded-full flex items-center justify-center text-amber-500 hover:scale-110 transition"><i class="fas fa-edit"></i></button>
-                                <button onclick="showQR('${shareUrl}')" class="w-10 h-10 bg-white rounded-full flex items-center justify-center text-slate-700 hover:scale-110 transition"><i class="fas fa-qrcode"></i></button>
-                                <a href="https://wa.me/?text=${encodeURIComponent(b.title + ': ' + shareUrl)}" target="_blank" class="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center text-white hover:scale-110 transition"><i class="fab fa-whatsapp"></i></a>
-                            </div>
+                    <div class="bg-white rounded-[2rem] overflow-hidden shadow-sm border border-slate-100 flex flex-col">
+                        <div class="h-40 bg-slate-50 relative">
+                            ${b.mediaUrls && b.mediaUrls.length ? `<img src="${b.mediaUrls[0]}" class="w-full h-full object-cover">` : `<div class="w-full h-full flex items-center justify-center text-slate-200"><i class="fas fa-images fa-2xl"></i></div>`}
+                            <div class="absolute top-3 right-3 bg-indigo-600 text-white px-3 py-1 rounded-full text-[10px] font-black">${b.category}</div>
                         </div>
-                        <div class="p-6 flex-1 flex flex-col">
-                            <h3 class="font-bold text-slate-800 text-lg mb-1 line-clamp-1">${b.title}</h3>
-                            <div class="flex flex-wrap gap-3 text-[10px] font-bold text-slate-300 mb-4">
-                                <span><i class="far fa-clock ml-1"></i> ${dateObj.toLocaleDateString('he-IL')}</span>
-                                <span class="text-indigo-400"><i class="far fa-eye ml-1"></i> ${b.views || 0}</span>
-                                ${b.expiryDate ? `<span class="text-red-400"><i class="fas fa-history ml-1"></i> ${b.expiryDate}</span>` : ''}
+                        <div class="p-6">
+                            <h3 class="font-bold text-slate-800 text-lg mb-4 line-clamp-1">${b.title}</h3>
+                            
+                            <div class="flex justify-between mb-4 bg-slate-50 p-2 rounded-2xl">
+                                <button onclick="editBlock('${b.id}')" class="flex-1 text-amber-500 hover:bg-white p-2 rounded-xl transition"><i class="fas fa-edit"></i></button>
+                                <button onclick="showQR('${shareUrl}')" class="flex-1 text-slate-600 hover:bg-white p-2 rounded-xl transition"><i class="fas fa-qrcode"></i></button>
+                                <a href="https://wa.me/?text=${encodeURIComponent(b.title + ': ' + shareUrl)}" target="_blank" class="flex-1 text-green-500 hover:bg-white p-2 rounded-xl transition text-center"><i class="fab fa-whatsapp"></i></a>
+                                <button onclick="deleteB('${b.id}', ${JSON.stringify(b.mediaUrls || [])})" class="flex-1 text-red-400 hover:bg-white p-2 rounded-xl transition"><i class="fas fa-trash-alt"></i></button>
                             </div>
-                            <div class="mt-auto flex gap-2">
-                                <button onclick="copyLink('${shareUrl}', '${b.title.replace(/'/g, "\\'")}')" class="flex-1 py-3 bg-slate-50 text-slate-600 rounded-xl text-xs font-black hover:bg-indigo-600 hover:text-white transition">העתק קישור</button>
-                                <button onclick="deleteB('${b.id}', '${b.mediaUrl}')" class="px-4 bg-red-50 text-red-400 rounded-xl hover:bg-red-500 hover:text-white transition"><i class="fas fa-trash-alt"></i></button>
-                            </div>
+
+                            <button onclick="copyLink('${shareUrl}', '${b.id}')" class="w-full py-4 bg-indigo-50 text-indigo-600 rounded-2xl text-xs font-black hover:bg-indigo-600 hover:text-white transition">העתק קישור שיתוף</button>
                         </div>
                     </div>
                 `;
@@ -168,76 +150,76 @@
         };
 
         window.save = async () => {
-            const t = document.getElementById('title').value, editId = document.getElementById('editId').value;
-            if(!t) return alert("כותרת היא שדה חובה");
             const btn = document.getElementById('saveBtn');
-            btn.disabled = true; btn.innerText = "מעבד...";
+            const files = document.getElementById('files').files;
+            btn.disabled = true; btn.innerText = "מעלה נתונים...";
             
             try {
-                let mUrl = editId ? blocks.find(b => b.id === editId).mediaUrl : "";
-                const f = document.getElementById('file').files[0];
-                if(f) {
-                    const r = ref(storage, `content/${Date.now()}_${f.name}`);
-                    await uploadBytes(r, f);
-                    mUrl = await getDownloadURL(r);
-                }
+                let urls = document.getElementById('editId').value ? (blocks.find(x=>x.id===document.getElementById('editId').value).mediaUrls || []) : [];
                 
+                if(files.length > 0) {
+                    const uploadPromises = Array.from(files).map(async (f) => {
+                        const r = ref(storage, `content/${Date.now()}_${f.name}`);
+                        await uploadBytes(r, f);
+                        return getDownloadURL(r);
+                    });
+                    const newUrls = await Promise.all(uploadPromises);
+                    urls = [...urls, ...newUrls];
+                }
+
                 const data = {
-                    title: t,
+                    title: document.getElementById('title').value,
                     category: document.getElementById('catSelect').value,
                     url: document.getElementById('externalUrl').value,
                     description: document.getElementById('desc').value,
-                    htmlContent: document.getElementById('htmlContent').value, // השדה החדש
-                    mediaUrl: mUrl,
+                    htmlContent: document.getElementById('htmlContent').value,
+                    mediaUrls: urls,
                     bgColor: document.getElementById('bgColor').value,
                     expiryDate: document.getElementById('expiryDate').value,
-                    createdAt: editId ? blocks.find(b => b.id === editId).createdAt : new Date(),
-                    views: editId ? (blocks.find(b => b.id === editId).views || 0) : 0
+                    createdAt: new Date()
                 };
 
-                if(editId) await updateDoc(doc(db, "blocks", editId), data);
+                if(document.getElementById('editId').value) await updateDoc(doc(db, "blocks", document.getElementById('editId').value), data);
                 else await addDoc(collection(db, "blocks"), data);
                 
                 resetForm();
-            } catch(e) { alert("שגיאה בשמירה"); }
+            } catch(e) { console.error(e); alert("שגיאה בשמירה"); }
             finally { btn.disabled = false; btn.innerText = "שמור והפץ ✨"; }
         };
 
-        window.editBlock = (id) => {
-            const b = blocks.find(x => x.id === id);
-            document.getElementById('title').value = b.title;
-            document.getElementById('catSelect').value = b.category;
-            document.getElementById('externalUrl').value = b.url || "";
-            document.getElementById('desc').value = b.description || "";
-            document.getElementById('htmlContent').value = b.htmlContent || "";
-            document.getElementById('bgColor').value = b.bgColor || "#ffffff";
-            document.getElementById('expiryDate').value = b.expiryDate || "";
-            document.getElementById('editId').value = id;
-            document.getElementById('formTitle').innerText = "עריכת הגדרות";
-            document.getElementById('cancelEditBtn').classList.remove('hidden');
-            window.scrollTo({ top: 0, behavior: 'smooth' });
+        window.showQR = (url) => {
+            const qrDiv = document.getElementById('qrcode');
+            qrDiv.innerHTML = "";
+            const qr = new QRCode(qrDiv, { text: url, width: 200, height: 200 });
+            
+            document.getElementById('downloadQR').onclick = () => {
+                const img = qrDiv.querySelector('img');
+                const link = document.createElement('a');
+                link.href = img.src;
+                link.download = 'qrcode.png';
+                link.click();
+            };
+            openModal('qrModal');
         };
 
-        window.resetForm = () => {
-            document.getElementById('editId').value = '';
-            document.getElementById('title').value = '';
-            document.getElementById('desc').value = '';
-            document.getElementById('externalUrl').value = '';
-            document.getElementById('htmlContent').value = '';
-            document.getElementById('expiryDate').value = '';
-            document.getElementById('bgColor').value = '#ffffff';
-            document.getElementById('formTitle').innerText = "יצירת קובייה והגדרות קישור";
-            document.getElementById('cancelEditBtn').classList.add('hidden');
-            document.getElementById('fileNameDisplay').innerText = "תמונת קאבר";
+        window.openCatManager = () => openModal('catModal');
+        window.confirmAddCategory = async () => {
+            const name = document.getElementById('newCatName').value;
+            if(name) { await setDoc(doc(db, "categories", name), {}); document.getElementById('newCatName').value = ''; }
         };
-
-        window.toggleView = () => { isGridView = !isGridView; document.getElementById('viewIcon').className = isGridView ? 'fas fa-list' : 'fas fa-th-large'; renderCards(); };
-        window.showQR = (url) => { document.getElementById('qrcode').innerHTML = ""; new QRCode(document.getElementById('qrcode'), { text: url, width: 200, height: 200 }); document.getElementById('qrModal').classList.add('active'); };
+        window.deleteCategory = async (name) => { if(confirm(`למחוק את ${name}?`)) await deleteDoc(doc(db, "categories", name)); };
+        window.deleteB = async (id, urls) => { 
+            if(confirm("למחוק לצמיתות?")) { 
+                for(let url of urls) await deleteObject(ref(storage, url)).catch(()=>{});
+                await deleteDoc(doc(db, "blocks", id)); 
+            } 
+        };
+        window.copyLink = (l) => { navigator.clipboard.writeText(l); document.getElementById('toast').className = "show"; setTimeout(()=>document.getElementById('toast').className="", 3000); };
+        window.openModal = (id) => document.getElementById(id).classList.add('active');
         window.closeModal = (id) => document.getElementById(id).classList.remove('active');
         window.setFilter = (c) => { currentFilter = c; renderCards(); };
-        window.copyLink = (l, t) => { navigator.clipboard.writeText(l); const ts = document.getElementById('toast'); ts.innerText = `✅ הקישור ל-"${t}" הועתק!`; ts.className = "show"; setTimeout(() => ts.className = "", 3000); };
-        window.deleteB = async (id, m) => { if(confirm("למחוק לצמיתות?")) { if(m && m.startsWith('http')) await deleteObject(ref(storage, m)).catch(()=>{}); await deleteDoc(doc(db, "blocks", id)); } };
-        document.getElementById('file').onchange = (e) => { document.getElementById('fileNameDisplay').innerText = e.target.files[0]?.name || "תמונת קאבר"; };
+        window.resetForm = () => { document.getElementById('editId').value = ''; document.getElementById('title').value = ''; document.getElementById('desc').value = ''; document.getElementById('htmlContent').value = ''; document.getElementById('files').value = ''; document.getElementById('fileNameDisplay').innerText = "העלה תמונות"; };
+        document.getElementById('files').onchange = (e) => { document.getElementById('fileNameDisplay').innerText = `${e.target.files.length} תמונות נבחרו`; };
     </script>
 </body>
 </html>
