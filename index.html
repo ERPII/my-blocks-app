@@ -3,98 +3,117 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MyBlocks Admin Pro | 2026</title>
+    <title>MyBlocks Admin Pro | Ultimate Control</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Assistant:wght@400;700;800&display=swap');
-        body { font-family: 'Assistant', sans-serif; background: #f8fafc; }
-        .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 1000; align-items: center; justify-content: center; backdrop-filter: blur(8px); }
-        .modal.active { display: flex; }
-        #toast { visibility: hidden; min-width: 250px; background: #1e293b; color: #fff; text-align: center; border-radius: 1rem; padding: 16px; position: fixed; z-index: 2000; left: 50%; bottom: 30px; transform: translateX(-50%); opacity: 0; transition: 0.4s; }
-        #toast.show { visibility: visible; opacity: 1; }
-        .preview-img { width: 80px; height: 80px; object-fit: cover; border-radius: 1rem; border: 2px solid #e2e8f0; }
-        .no-scrollbar::-webkit-scrollbar { display: none; }
+        body { font-family: 'Assistant', sans-serif; background: #f8fafc; color: #1e293b; }
+        .input-card { @apply bg-white p-6 rounded-[2rem] shadow-sm border border-slate-100; }
+        .label-style { @apply text-[11px] font-black text-slate-400 mb-2 block uppercase tracking-wider; }
+        .field-style { @apply w-full p-4 bg-slate-50 rounded-2xl outline-none focus:ring-2 focus:ring-indigo-500 transition border-none shadow-inner; }
     </style>
 </head>
 <body class="p-4 md:p-8">
 
-    <div id="toast">✅ הפעולה בוצעה בהצלחה!</div>
-
-    <div id="qrModal" class="modal" onclick="closeModal('qrModal')">
-        <div class="bg-white p-8 rounded-[2rem] shadow-2xl text-center" onclick="event.stopPropagation()">
-            <h3 class="text-xl font-black mb-4 text-slate-800">קוד QR להפצה</h3>
-            <div id="qrcode" class="flex justify-center mb-6"></div>
-            <div class="flex gap-2">
-                <button id="downloadQR" class="flex-1 bg-indigo-600 text-white py-3 rounded-xl font-bold">הורד תמונה</button>
-                <button onclick="closeModal('qrModal')" class="flex-1 bg-slate-100 py-3 rounded-xl font-bold text-slate-500">סגור</button>
-            </div>
-        </div>
-    </div>
-
     <div class="max-w-6xl mx-auto">
-        <header class="flex flex-col md:flex-row justify-between items-center mb-10 gap-4">
+        <header class="mb-10 flex justify-between items-end">
             <div>
-                <h1 class="text-4xl font-black text-slate-800">MyBlocks <span class="text-indigo-600">Pro</span></h1>
-                <p class="text-slate-400 font-bold text-sm">מערכת ניהול תוכן חכמה ומסונכרנת</p>
+                <h1 class="text-4xl font-black text-slate-800">ניהול <span class="text-indigo-600">Smart Control</span></h1>
+                <p class="text-slate-400 font-bold">שליטה מלאה בלוח הזמנים ובמדיה</p>
             </div>
         </header>
 
-        <div class="bg-white p-6 md:p-8 rounded-[2.5rem] shadow-xl mb-12 border border-slate-100">
-            <h2 id="formHeader" class="text-xl font-black mb-6 text-slate-700">צור/ערוך קובייה</h2>
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-12">
             <input type="hidden" id="editId">
             
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div class="space-y-4">
-                    <input type="text" id="title" placeholder="כותרת הקובייה *" class="w-full p-4 bg-slate-50 rounded-2xl border-none shadow-inner outline-none focus:ring-2 focus:ring-indigo-500">
-                    <select id="catSelect" class="w-full p-4 bg-slate-50 rounded-2xl border-none shadow-inner outline-none"></select>
-                    <input type="url" id="externalUrl" placeholder="קישור חיצוני (https://...)" class="w-full p-4 bg-slate-50 rounded-2xl border-none shadow-inner text-left outline-none" dir="ltr">
+            <div class="lg:col-span-2 space-y-6">
+                <div class="input-card">
+                    <label class="label-style">פרטי הקובייה</label>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <input type="text" id="title" placeholder="כותרת הקובייה *" class="field-style">
+                        <select id="catSelect" class="field-style"></select>
+                    </div>
+                    <textarea id="desc" placeholder="תיאור התוכן..." class="field-style mt-4 h-24 resize-none"></textarea>
+                    <input type="url" id="externalUrl" placeholder="קישור חיצוני (https://...)" class="field-style mt-4 text-left" dir="ltr">
                 </div>
-                <div class="space-y-4">
-                    <textarea id="desc" placeholder="תיאור חופשי..." class="w-full p-4 bg-slate-50 rounded-2xl h-20 border-none shadow-inner resize-none outline-none"></textarea>
-                    <textarea id="htmlContent" placeholder="הזרקת קוד HTML (Embed וכו')..." class="w-full p-4 bg-indigo-50/40 rounded-2xl h-24 border-none shadow-inner font-mono text-xs outline-none" dir="ltr"></textarea>
+
+                <div class="input-card">
+                    <label class="label-style">הודעות תזמון (Scheduling Messages)</label>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="text-[10px] font-bold text-amber-600">הודעה לפני הפרסום:</label>
+                            <input type="text" id="preMsg" placeholder="למשל: התוכן יעלה בקרוב..." class="field-style mt-1">
+                        </div>
+                        <div>
+                            <label class="text-[10px] font-bold text-red-600">הודעה לאחר שתוקף הדף פג:</label>
+                            <input type="text" id="postMsg" placeholder="למשל: התוכן אינו זמין יותר." class="field-style mt-1">
+                        </div>
+                    </div>
                 </div>
-                <div class="space-y-4">
+            </div>
+
+            <div class="space-y-6">
+                <div class="input-card">
+                    <label class="label-style">הגדרות נגן וזמנים</label>
+                    <div class="grid grid-cols-2 gap-3 mb-4">
+                        <div>
+                            <label class="text-[10px] font-bold">תאריך פרסום:</label>
+                            <input type="datetime-local" id="scheduleDate" class="w-full p-2 bg-slate-50 rounded-xl text-[11px]">
+                        </div>
+                        <div>
+                            <label class="text-[10px] font-bold">תאריך סיום (תפוגה):</label>
+                            <input type="datetime-local" id="expiryDate" class="w-full p-2 bg-slate-50 rounded-xl text-[11px]">
+                        </div>
+                    </div>
+                    
+                    <div class="flex items-center justify-between p-3 bg-indigo-50 rounded-2xl mb-4">
+                        <span class="text-sm font-bold text-indigo-700">נגן וידאו עם סאונד?</span>
+                        <label class="relative inline-flex items-center cursor-pointer">
+                            <input type="checkbox" id="isMuted" class="sr-only peer">
+                            <div class="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
+                        </label>
+                    </div>
+
                     <div class="grid grid-cols-2 gap-2">
-                        <div>
-                            <label class="text-[10px] font-black text-slate-400 block mb-1 uppercase tracking-tighter">צבע רקע</label>
-                            <input type="color" id="bgColor" value="#ffffff" class="w-full h-10 bg-white rounded-xl cursor-pointer border p-1">
-                        </div>
-                        <div>
-                            <label class="text-[10px] font-black text-slate-400 block mb-1 uppercase tracking-tighter">מהירות סליידר (שניות)</label>
-                            <input type="number" id="slideSpeed" value="3" min="1" class="w-full h-10 bg-slate-50 rounded-xl px-2 text-center border-none shadow-inner outline-none">
-                        </div>
-                    </div>
-                    <div class="relative h-24 border-2 border-dashed border-slate-200 rounded-2xl flex flex-col items-center justify-center hover:bg-indigo-50 transition cursor-pointer">
-                        <input type="file" id="files" multiple class="absolute inset-0 opacity-0 cursor-pointer">
-                        <i class="fas fa-plus-circle text-indigo-400 text-xl mb-1"></i>
-                        <span id="fileNameDisplay" class="text-slate-400 text-[10px] font-black">העלה תמונות גלריה</span>
+                        <input type="number" id="slideSpeed" placeholder="שניות לסלייד" class="field-style text-center text-sm" value="3">
+                        <input type="color" id="bgColor" value="#ffffff" class="w-full h-12 p-1 bg-white border rounded-xl">
                     </div>
                 </div>
-            </div>
 
-            <div id="mediaManager" class="mt-6 hidden border-t pt-4">
-                <p class="text-[10px] font-black text-slate-400 mb-3 uppercase tracking-widest">תמונות קיימות (לחץ למחיקה):</p>
-                <div id="imagesPreview" class="flex flex-wrap gap-3 overflow-x-auto p-2 no-scrollbar"></div>
-            </div>
-
-            <div class="flex gap-3 mt-8">
-                <button onclick="save()" id="saveBtn" class="bg-indigo-600 text-white px-12 py-4 rounded-2xl font-black shadow-lg hover:bg-indigo-700 transition active:scale-95">שמור והפץ ✨</button>
-                <button id="cancelEditBtn" onclick="resetForm()" class="hidden bg-slate-100 text-slate-500 px-8 py-4 rounded-2xl font-bold">ביטול עריכה</button>
+                <div class="input-card text-center">
+                    <label class="label-style">מדיה וקבצים</label>
+                    <div class="flex gap-2">
+                        <div class="relative flex-1 h-20 border-2 border-dashed border-indigo-200 rounded-2xl flex flex-col items-center justify-center hover:bg-indigo-50 cursor-pointer">
+                            <input type="file" id="mediaFiles" multiple accept="image/*,video/mp4" class="absolute inset-0 opacity-0 cursor-pointer">
+                            <i class="fas fa-photo-video text-indigo-400"></i>
+                            <span class="text-[9px] font-bold">מדיה</span>
+                        </div>
+                        <div class="relative flex-1 h-20 border-2 border-dashed border-slate-200 rounded-2xl flex flex-col items-center justify-center hover:bg-slate-50 cursor-pointer">
+                            <input type="file" id="docFile" accept=".pdf,.doc,.docx" class="absolute inset-0 opacity-0 cursor-pointer">
+                            <i class="fas fa-file-alt text-slate-400"></i>
+                            <span class="text-[9px] font-bold">קובץ</span>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
 
-        <div id="catFilter" class="flex gap-3 mb-8 overflow-x-auto pb-2 no-scrollbar"></div>
-        <div id="canvas" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 pb-32"></div>
+        <div id="mediaManager" class="mb-8 hidden"><div id="imagesPreview" class="flex flex-wrap gap-3 p-4 bg-white rounded-3xl"></div></div>
+
+        <div class="flex gap-4">
+            <button onclick="save()" id="saveBtn" class="flex-1 py-5 bg-indigo-600 text-white rounded-[2rem] font-black text-xl shadow-xl shadow-indigo-200 hover:bg-indigo-700 active:scale-95 transition">שמור ועדכן מסכים ✨</button>
+            <button id="cancelEditBtn" onclick="resetForm()" class="hidden px-10 py-5 bg-slate-200 text-slate-500 rounded-[2rem] font-bold">ביטול</button>
+        </div>
+
+        <div id="canvas" class="grid grid-cols-1 md:grid-cols-3 gap-8 mt-16 pb-20"></div>
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js";
         import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, doc, deleteDoc, updateDoc } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore.js";
-        import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-storage.js";
+        import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-storage.js";
 
-        // Firebase Config (Your credentials)
         const firebaseConfig = {
             apiKey: "AIzaSyB0f0u0WqlScU5r9PE0wm0GkKA3f1MFHv8",
             authDomain: "myblocksapp-a7d1c.firebaseapp.com",
@@ -107,178 +126,126 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
         const storage = getStorage(app);
-        
-        let blocks = [], currentUrls = [], currentFilter = 'הכל';
+        let blocks = [], currentUrls = [], attachedDocUrl = "";
 
-        onSnapshot(collection(db, "categories"), (s) => {
-            const sel = document.getElementById('catSelect'), fil = document.getElementById('catFilter');
-            sel.innerHTML = '<option value="כללי">כללי</option>';
-            fil.innerHTML = `<button onclick="setFilter('הכל')" class="${currentFilter==='הכל'?'bg-indigo-600 text-white':'bg-white text-slate-500'} px-6 py-2 rounded-xl shadow-sm font-bold text-xs transition">הכל</button>`;
-            s.forEach(d => {
-                sel.innerHTML += `<option value="${d.id}">${d.id}</option>`;
-                fil.innerHTML += `<button onclick="setFilter('${d.id}')" class="${currentFilter===d.id?'bg-indigo-600 text-white':'bg-white text-slate-500'} px-6 py-2 rounded-xl shadow-sm font-bold text-xs transition">${d.id}</button>`;
-            });
+        onSnapshot(collection(db, "categories"), s => {
+            const sel = document.getElementById('catSelect'); sel.innerHTML = '<option value="כללי">כללי</option>';
+            s.forEach(d => sel.innerHTML += `<option value="${d.id}">${d.id}</option>`);
         });
 
-        onSnapshot(query(collection(db, "blocks"), orderBy("createdAt", "desc")), (s) => {
+        onSnapshot(query(collection(db, "blocks"), orderBy("createdAt", "desc")), s => {
             blocks = []; s.forEach(d => blocks.push({id: d.id, ...d.data()}));
             renderCards();
         });
 
         window.renderCards = () => {
-            const container = document.getElementById('canvas');
-            container.innerHTML = '';
-            blocks.filter(b => currentFilter === 'הכל' || b.category === currentFilter).forEach(b => {
-                const shareUrl = window.location.origin + window.location.pathname.replace('index.html', '') + 'view.html?id=' + b.id;
-                const d = b.createdAt?.toDate ? b.createdAt.toDate() : new Date();
+            const container = document.getElementById('canvas'); container.innerHTML = '';
+            blocks.forEach(b => {
+                const now = new Date();
+                const isWaiting = b.scheduleDate && new Date(b.scheduleDate) > now;
+                const isExpired = b.expiryDate && new Date(b.expiryDate) < now;
                 
                 container.innerHTML += `
-                    <div class="bg-white rounded-[2.5rem] overflow-hidden shadow-sm border border-slate-100 flex flex-col group hover:shadow-2xl transition-all">
-                        <div class="h-44 bg-slate-50 relative overflow-hidden">
-                            ${b.mediaUrls?.length ? `<img src="${b.mediaUrls[0]}" class="w-full h-full object-cover">` : `<div class="w-full h-full flex items-center justify-center text-slate-200"><i class="fas fa-images fa-3x"></i></div>`}
-                            <div class="absolute top-4 right-4 bg-indigo-600 text-white px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest">${b.category}</div>
+                    <div class="bg-white rounded-[2.5rem] overflow-hidden shadow-sm border border-slate-100 flex flex-col hover:shadow-xl transition relative">
+                        <div class="absolute top-4 right-4 z-10 flex gap-1">
+                            ${isWaiting ? '<span class="bg-amber-500 text-white text-[9px] px-2 py-1 rounded-full font-bold uppercase">ממתין</span>' : ''}
+                            ${isExpired ? '<span class="bg-red-500 text-white text-[9px] px-2 py-1 rounded-full font-bold uppercase">פג תוקף</span>' : ''}
+                        </div>
+                        <div class="h-44 bg-slate-100">
+                            ${b.mediaUrls?.[0]?.includes('.mp4') ? `<video src="${b.mediaUrls[0]}" class="w-full h-full object-cover"></video>` : `<img src="${b.mediaUrls?.[0] || ''}" class="w-full h-full object-cover">`}
                         </div>
                         <div class="p-6">
-                            <h3 class="font-black text-slate-800 text-lg mb-1 line-clamp-1">${b.title}</h3>
-                            <div class="flex items-center gap-3 text-[10px] font-bold text-slate-300 mb-5">
-                                <span><i class="far fa-clock ml-1"></i> ${d.toLocaleTimeString('he-IL', {hour:'2-digit', minute:'2-digit'})}</span>
-                                <span class="text-indigo-400"><i class="far fa-eye ml-1"></i> ${b.views || 0} צפיות</span>
+                            <h3 class="font-black text-slate-800 text-lg mb-1">${b.title}</h3>
+                            <div class="text-[10px] text-slate-400 font-bold mb-4 uppercase tracking-widest">${b.category}</div>
+                            <div class="flex gap-2">
+                                <button onclick="editBlock('${b.id}')" class="flex-1 p-3 bg-slate-50 text-amber-500 rounded-2xl hover:bg-amber-500 hover:text-white transition"><i class="fas fa-edit"></i></button>
+                                <button onclick="deleteB('${b.id}')" class="flex-1 p-3 bg-slate-50 text-red-400 rounded-2xl hover:bg-red-500 hover:text-white transition"><i class="fas fa-trash-alt"></i></button>
                             </div>
-                            <div class="grid grid-cols-4 gap-2 mb-4">
-                                <button onclick="editBlock('${b.id}')" class="p-3 bg-slate-50 text-amber-500 rounded-2xl hover:bg-amber-500 hover:text-white transition"><i class="fas fa-edit"></i></button>
-                                <button onclick="window.open('${shareUrl}', '_blank')" class="p-3 bg-slate-50 text-blue-500 rounded-2xl hover:bg-blue-500 hover:text-white transition" title="צפייה מהירה"><i class="fas fa-eye"></i></button>
-                                <button onclick="showQR('${shareUrl}')" class="p-3 bg-slate-50 text-slate-600 rounded-2xl hover:bg-slate-600 hover:text-white transition"><i class="fas fa-qrcode"></i></button>
-                                <button onclick="deleteB('${b.id}', ${JSON.stringify(b.mediaUrls || [])})" class="p-3 bg-slate-50 text-red-400 rounded-2xl hover:bg-red-500 hover:text-white transition"><i class="fas fa-trash-alt"></i></button>
-                            </div>
-                            <button onclick="copyLink('${shareUrl}')" class="w-full py-4 bg-indigo-50 text-indigo-600 rounded-2xl text-xs font-black hover:bg-indigo-600 hover:text-white transition uppercase tracking-widest">העתק קישור להפצה</button>
                         </div>
-                    </div>
-                `;
+                    </div>`;
             });
-        };
-
-        window.removeImage = (index) => {
-            currentUrls.splice(index, 1);
-            updateMediaPreview();
-        };
-
-        const updateMediaPreview = () => {
-            const container = document.getElementById('imagesPreview');
-            const manager = document.getElementById('mediaManager');
-            container.innerHTML = '';
-            if (currentUrls.length > 0) {
-                manager.classList.remove('hidden');
-                currentUrls.forEach((url, index) => {
-                    container.innerHTML += `
-                        <div class="relative group cursor-pointer" onclick="removeImage(${index})">
-                            <img src="${url}" class="preview-img hover:opacity-50 transition">
-                            <div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 text-red-500"><i class="fas fa-trash"></i></div>
-                        </div>`;
-                });
-            } else manager.classList.add('hidden');
         };
 
         window.save = async () => {
             const btn = document.getElementById('saveBtn');
-            const files = document.getElementById('files').files;
+            const mediaFiles = document.getElementById('mediaFiles').files;
+            const docFile = document.getElementById('docFile').files[0];
             const editId = document.getElementById('editId').value;
-            btn.disabled = true; btn.innerText = "מעלה נתונים...";
-            
+            btn.disabled = true; btn.innerText = "מעבד...";
+
             try {
-                let uploadedUrls = [...currentUrls];
-                if(files.length > 0) {
-                    const uploadPromises = Array.from(files).map(async (f) => {
-                        const r = ref(storage, `content/${Date.now()}_${f.name}`);
-                        await uploadBytes(r, f);
-                        return getDownloadURL(r);
-                    });
-                    const newUrls = await Promise.all(uploadPromises);
-                    uploadedUrls = [...uploadedUrls, ...newUrls];
+                let mediaUrls = [...currentUrls];
+                for(let f of mediaFiles) {
+                    const r = ref(storage, `content/${Date.now()}_${f.name}`);
+                    await uploadBytes(r, f);
+                    mediaUrls.push(await getDownloadURL(r));
+                }
+
+                let docUrl = attachedDocUrl;
+                if(docFile) {
+                    const r = ref(storage, `docs/${Date.now()}_${docFile.name}`);
+                    await uploadBytes(r, docFile);
+                    docUrl = await getDownloadURL(r);
                 }
 
                 const data = {
                     title: document.getElementById('title').value,
                     category: document.getElementById('catSelect').value,
-                    url: document.getElementById('externalUrl').value,
                     description: document.getElementById('desc').value,
-                    htmlContent: document.getElementById('htmlContent').value,
-                    mediaUrls: uploadedUrls,
+                    url: document.getElementById('externalUrl').value,
+                    preMsg: document.getElementById('preMsg').value || "התוכן יעלה בקרוב...",
+                    postMsg: document.getElementById('postMsg').value || "התוכן אינו זמין עוד.",
+                    mediaUrls, docUrl,
                     bgColor: document.getElementById('bgColor').value,
                     slideSpeed: parseInt(document.getElementById('slideSpeed').value) || 3,
+                    scheduleDate: document.getElementById('scheduleDate').value,
+                    expiryDate: document.getElementById('expiryDate').value,
+                    isMuted: !document.getElementById('isMuted').checked,
                     lastUpdated: Date.now(),
-                    createdAt: editId ? (blocks.find(x => x.id === editId).createdAt) : new Date(),
-                    views: editId ? (blocks.find(x => x.id === editId).views || 0) : 0
+                    createdAt: editId ? (blocks.find(x => x.id === editId).createdAt) : new Date()
                 };
 
                 if(editId) await updateDoc(doc(db, "blocks", editId), data);
                 else await addDoc(collection(db, "blocks"), data);
-                
                 resetForm();
-                showToast("✅ נשמר בהצלחה ומסונכרן!");
             } catch(e) { alert("שגיאה!"); }
-            finally { btn.disabled = false; btn.innerText = "שמור והפץ ✨"; }
+            finally { btn.disabled = false; btn.innerText = "שמור ועדכן מסכים ✨"; }
         };
 
-        window.editBlock = (id) => {
+        window.editBlock = id => {
             const b = blocks.find(x => x.id === id);
             document.getElementById('editId').value = b.id;
             document.getElementById('title').value = b.title;
-            document.getElementById('catSelect').value = b.category;
-            document.getElementById('externalUrl').value = b.url || "";
-            document.getElementById('desc').value = b.description || "";
-            document.getElementById('htmlContent').value = b.htmlContent || "";
-            document.getElementById('bgColor').value = b.bgColor || "#ffffff";
-            document.getElementById('slideSpeed').value = b.slideSpeed || 3;
-            currentUrls = [...(b.mediaUrls || [])];
+            document.getElementById('desc').value = b.description;
+            document.getElementById('preMsg').value = b.preMsg || "";
+            document.getElementById('postMsg').value = b.postMsg || "";
+            document.getElementById('scheduleDate').value = b.scheduleDate || "";
+            document.getElementById('expiryDate').value = b.expiryDate || "";
+            document.getElementById('isMuted').checked = !b.isMuted;
+            currentUrls = b.mediaUrls || [];
             updateMediaPreview();
-            document.getElementById('formHeader').innerText = "עריכת קובייה";
             document.getElementById('cancelEditBtn').classList.remove('hidden');
-            window.scrollTo({ top: 0, behavior: 'smooth' });
         };
 
         window.resetForm = () => {
             document.getElementById('editId').value = '';
-            document.getElementById('title').value = '';
-            document.getElementById('desc').value = '';
-            document.getElementById('htmlContent').value = '';
-            document.getElementById('externalUrl').value = '';
-            document.getElementById('files').value = '';
-            currentUrls = [];
-            updateMediaPreview();
-            document.getElementById('formHeader').innerText = "צור קובייה חדשה";
+            document.getElementById('preMsg').value = '';
+            document.getElementById('postMsg').value = '';
+            currentUrls = []; updateMediaPreview();
             document.getElementById('cancelEditBtn').classList.add('hidden');
         };
 
-        window.showQR = (url) => {
-            const qrDiv = document.getElementById('qrcode');
-            qrDiv.innerHTML = "";
-            const qr = new QRCode(qrDiv, { text: url, width: 200, height: 200 });
-            document.getElementById('downloadQR').onclick = () => {
-                const img = qrDiv.querySelector('img');
-                const link = document.createElement('a');
-                link.href = img.src; link.download = 'qrcode.png'; link.click();
-            };
-            document.getElementById('qrModal').classList.add('active');
+        const updateMediaPreview = () => {
+            const container = document.getElementById('imagesPreview');
+            container.innerHTML = '';
+            currentUrls.forEach((u, i) => {
+                container.innerHTML += `<div class="relative"><img src="${u}" class="w-20 h-20 object-cover rounded-xl border-2 border-slate-100"><button onclick="removeImg(${i})" class="absolute -top-2 -left-2 bg-red-500 text-white rounded-full w-5 h-5 text-[10px]">x</button></div>`;
+            });
+            document.getElementById('mediaManager').classList.toggle('hidden', currentUrls.length === 0);
         };
 
-        window.deleteB = async (id, urls) => {
-            if(confirm("למחוק לצמיתות?")) {
-                for(let url of urls) await deleteObject(ref(storage, url)).catch(()=>{});
-                await deleteDoc(doc(db, "blocks", id));
-            }
-        };
-
-        const showToast = (msg) => {
-            const t = document.getElementById('toast');
-            t.innerText = msg; t.className = "show"; setTimeout(() => t.className = "", 3000);
-        };
-
-        window.copyLink = (l) => { navigator.clipboard.writeText(l); showToast("✅ הקישור הועתק!"); };
-        window.setFilter = (c) => { currentFilter = c; renderCards(); };
-        window.closeModal = (id) => document.getElementById(id).classList.remove('active');
-        document.getElementById('files').onchange = (e) => {
-            document.getElementById('fileNameDisplay').innerText = `נבחרו ${e.target.files.length} תמונות`;
-        };
+        window.removeImg = i => { currentUrls.splice(i, 1); updateMediaPreview(); };
+        window.deleteB = async id => { if(confirm("למחוק?")) await deleteDoc(doc(db, "blocks", id)); };
     </script>
 </body>
 </html>
