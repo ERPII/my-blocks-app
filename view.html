@@ -3,30 +3,28 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Live View</title>
+    <title>View</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Assistant:wght@400;800&display=swap');
         body { font-family: 'Assistant', sans-serif; transition: background 1s ease; overflow: hidden; }
-        .media-item { display: none; width: 100%; height: 75vh; object-fit: contain; border-radius: 3rem; animation: fadeIn 0.8s ease; }
-        .media-item.active { display: block; }
+        .media-item { display: none; width: 100%; height: 75vh; object-fit: contain; border-radius: 3rem; }
+        .media-item.active { display: block; animation: fadeIn 0.8s ease; }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-        .msg-box { @apply text-4xl font-black text-slate-800 bg-white/90 p-16 rounded-[4rem] shadow-2xl backdrop-blur-md border border-white; }
     </style>
 </head>
 <body class="flex flex-col items-center justify-center p-4 min-h-screen">
 
-    <div id="statusView" class="hidden text-center"><h1 id="statusText" class="msg-box"></h1></div>
-
-    <div id="contentView" class="max-w-6xl w-full hidden text-center">
+    <div id="content" class="max-w-6xl w-full hidden text-center">
         <div id="mediaBox" class="mb-10"></div>
-        <h1 id="title" class="text-6xl font-black text-slate-900 mb-6 tracking-tighter"></h1>
-        <p id="desc" class="text-slate-600 text-2xl mb-8"></p>
+        <h1 id="title" class="text-6xl font-black text-slate-900 mb-6"></h1>
+        <p id="desc" class="text-2xl text-slate-600 mb-10"></p>
+        <a id="mainBtn" href="#" target="_blank" class="inline-block px-14 py-6 bg-indigo-600 text-white rounded-[2.5rem] font-black shadow-2xl text-2xl">לחץ כאן</a>
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js";
-        import { getFirestore, doc, onSnapshot } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore.js";
+        import { getFirestore, doc, onSnapshot, updateDoc, increment } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyB0f0u0WqlScU5r9PE0wm0GkKA3f1MFHv8",
@@ -40,55 +38,39 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
         const id = new URLSearchParams(window.location.search).get('id');
-        let slideIdx = 0, timer, lastUpd;
+        let slideIdx = 0, timer;
 
         if(id) {
+            // עדכון מונה צפיות
+            updateDoc(doc(db, "blocks", id), { views: increment(1) });
+
             onSnapshot(doc(db, "blocks", id), snap => {
-                if(!snap.exists()) {
-                    showStatus("התוכן הוסר."); return;
-                }
-                const d = snap.data();
-                if(lastUpd && lastUpd !== d.lastUpdated) window.location.reload();
-                lastUpd = d.lastUpdated;
-                updateDisplay(d);
+                if(snap.exists()) render(snap.data());
             });
         }
 
-        function updateDisplay(d) {
-            const now = new Date();
-            const start = d.scheduleDate ? new Date(d.scheduleDate) : null;
-            const end = d.expiryDate ? new Date(d.expiryDate) : null;
+        function render(d) {
+            document.body.style.backgroundColor = d.bgColor;
+            document.getElementById('title').innerText = d.title;
+            document.getElementById('desc').innerText = d.description;
+            
+            const box = document.getElementById('mediaBox'); box.innerHTML = '';
+            (d.mediaUrls || []).forEach((u, i) => {
+                const isVid = u.includes('.mp4');
+                const el = isVid ? document.createElement('video') : document.createElement('img');
+                el.src = u; el.className = `media-item ${i===0?'active':''}`;
+                if(isVid) { el.muted = d.isMuted; el.autoplay = true; el.loop = true; el.playsInline = true; }
+                box.appendChild(el);
+            });
 
-            if(start && now < start) {
-                showStatus(d.preMsg);
-            } else if(end && now > end) {
-                showStatus(d.postMsg);
-            } else {
-                document.getElementById('statusView').classList.add('hidden');
-                document.getElementById('contentView').classList.remove('hidden');
-                document.body.style.backgroundColor = d.bgColor;
-                document.getElementById('title').innerText = d.title;
-                document.getElementById('desc').innerText = d.description;
+            if(d.url) document.getElementById('mainBtn').href = d.url;
+            else document.getElementById('mainBtn').style.display = 'none';
 
-                const box = document.getElementById('mediaBox'); box.innerHTML = '';
-                (d.mediaUrls || []).forEach((u, i) => {
-                    const isVid = u.includes('.mp4');
-                    const el = isVid ? document.createElement('video') : document.createElement('img');
-                    el.src = u; el.className = `media-item ${i===0?'active':''}`;
-                    if(isVid) { el.muted = d.isMuted; el.autoplay = true; el.loop = true; el.playsInline = true; }
-                    box.appendChild(el);
-                });
-                startAutoSlide(d.slideSpeed || 3);
-            }
+            document.getElementById('content').classList.remove('hidden');
+            startSlider(d.slideSpeed || 3);
         }
 
-        function showStatus(txt) {
-            document.getElementById('contentView').classList.add('hidden');
-            document.getElementById('statusView').classList.remove('hidden');
-            document.getElementById('statusText').innerText = txt;
-        }
-
-        function startAutoSlide(sec) {
+        function startSlider(sec) {
             clearInterval(timer);
             const items = document.querySelectorAll('.media-item');
             if(items.length < 2) return;
