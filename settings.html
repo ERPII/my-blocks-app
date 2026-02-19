@@ -2,45 +2,62 @@
 <html lang="he" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <title>הגדרות | MyBlocks</title>
+    <title>הגדרות מערכת | MyBlocks</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Assistant:wght@400;800&display=swap');
-        body { font-family: 'Assistant', sans-serif; background: #f8fafc; overflow: hidden; }
+        body { font-family: 'Assistant', sans-serif; background: #f8fafc; overflow: hidden; margin: 0; }
+        .card { @apply bg-white p-8 rounded-[3rem] shadow-xl border border-slate-100 mb-6; }
+        .input-box { @apply w-full p-4 border-2 border-slate-900 rounded-2xl font-bold bg-white outline-none focus:border-indigo-600 transition-all; }
         .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 9999; align-items: center; justify-content: center; backdrop-filter: blur(5px); }
         .modal.active { display: flex; }
     </style>
 </head>
-<body class="p-10">
+<body class="p-4 md:p-10 flex flex-col items-center">
 
-    <div id="customAlert" class="modal">
-        <div class="bg-white p-8 rounded-[2.5rem] w-full max-w-sm shadow-2xl text-center">
-            <div id="alertIcon" class="text-4xl mb-4">✅</div>
-            <h3 id="alertTitle" class="text-2xl font-black mb-2"></h3>
-            <p id="alertMsg" class="text-slate-500 font-bold mb-6"></p>
-            <button onclick="document.getElementById('customAlert').classList.remove('active')" class="w-full py-3 bg-slate-900 text-white rounded-xl font-black">הבנתי</button>
+    <div id="alert" class="modal">
+        <div class="bg-white p-8 rounded-[2rem] text-center shadow-2xl">
+            <div class="text-4xl mb-2">✅</div>
+            <h3 class="text-xl font-black">ההגדרות נשמרו!</h3>
+            <button onclick="document.getElementById('alert').classList.remove('active')" class="mt-4 px-8 py-2 bg-slate-900 text-white rounded-xl">אישור</button>
         </div>
     </div>
 
-    <div class="max-w-2xl mx-auto bg-white p-10 rounded-[3rem] shadow-2xl">
-        <h2 class="text-3xl font-black mb-8 text-indigo-600">הגדרות מערכת</h2>
-        
-        <label class="block font-bold mb-2">שם האפליקציה:</label>
-        <input type="text" id="appName" class="w-full p-4 border-2 border-slate-900 rounded-2xl mb-6 font-bold">
-        
-        <label class="block font-bold mb-2">צבע מותג:</label>
-        <input type="color" id="brandColor" class="w-full h-14 border-2 border-slate-900 rounded-2xl mb-10 cursor-pointer">
+    <div class="max-w-4xl w-full">
+        <div class="flex justify-between items-center mb-10">
+            <h1 class="text-4xl font-black text-slate-800">הגדרות המערכת</h1>
+            <a href="admin.html" class="px-6 py-3 bg-slate-900 text-white rounded-2xl font-black shadow-lg">חזרה לניהול</a>
+        </div>
 
-        <button onclick="save()" id="saveBtn" class="w-full py-5 bg-indigo-600 text-white rounded-2xl font-black text-xl hover:bg-indigo-700 transition">שמור שינויים ✨</button>
-        
-        <div class="mt-8 text-center">
-            <a href="admin.html" class="text-slate-400 font-bold hover:text-slate-900 underline">חזרה לניהול</a>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="card">
+                <h2 class="text-xl font-black mb-6 text-indigo-600 border-b pb-2">זהות המערכת</h2>
+                <div class="space-y-4 text-right">
+                    <div><label class="font-bold text-sm">שם האפליקציה:</label><input type="text" id="appName" class="input-box"></div>
+                    <div><label class="font-bold text-sm">קישור ללוגו (URL):</label><input type="url" id="logoUrl" class="input-box" dir="ltr"></div>
+                    <div><label class="font-bold text-sm">טקסט פוטר (זכויות):</label><input type="text" id="footerText" class="input-box"></div>
+                    <div><label class="font-bold text-sm">צבע מותג:</label><input type="color" id="brandColor" class="w-full h-14 border-2 border-slate-900 rounded-2xl cursor-pointer"></div>
+                </div>
+                <button onclick="saveSettings()" class="w-full mt-6 py-4 bg-indigo-600 text-white rounded-2xl font-black hover:bg-indigo-700 transition">שמור הגדרות ✨</button>
+            </div>
+
+            <div class="card">
+                <h2 class="text-xl font-black mb-6 text-indigo-600 border-b pb-2">ניהול משתמשים</h2>
+                <div class="space-y-4 mb-6">
+                    <input type="text" id="userName" class="input-box !p-3" placeholder="שם המשתמש">
+                    <input type="email" id="userEmail" class="input-box !p-3" placeholder="אימייל">
+                    <button onclick="addUser()" class="w-full py-3 bg-slate-900 text-white rounded-xl font-black hover:bg-black">הוסף משתמש לצוות</button>
+                </div>
+                <div class="max-h-48 overflow-y-auto space-y-2" id="usersList">
+                    </div>
+            </div>
         </div>
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js";
-        import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore.js";
+        import { getFirestore, doc, setDoc, onSnapshot, collection, addDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyB0f0u0WqlScU5r9PE0wm0GkKA3f1MFHv8",
@@ -56,20 +73,46 @@
 
         onSnapshot(doc(db, "settings", "general"), snap => {
             if(snap.exists()) {
-                document.getElementById('appName').value = snap.data().appName || '';
-                document.getElementById('brandColor').value = snap.data().brandColor || '#4f46e5';
+                const d = snap.data();
+                document.getElementById('appName').value = d.appName || '';
+                document.getElementById('logoUrl').value = d.logoUrl || '';
+                document.getElementById('footerText').value = d.footerText || '';
+                document.getElementById('brandColor').value = d.brandColor || '#4f46e5';
             }
         });
 
-        window.save = async () => {
+        window.saveSettings = async () => {
             await setDoc(doc(db, "settings", "general"), {
                 appName: document.getElementById('appName').value,
+                logoUrl: document.getElementById('logoUrl').value,
+                footerText: document.getElementById('footerText').value,
                 brandColor: document.getElementById('brandColor').value
             });
-            document.getElementById('alertTitle').innerText = "נשמר!";
-            document.getElementById('alertMsg').innerText = "הגדרות המערכת עודכנו בהצלחה";
-            document.getElementById('customAlert').classList.add('active');
+            document.getElementById('alert').classList.add('active');
         };
+
+        onSnapshot(collection(db, "users"), snap => {
+            const list = document.getElementById('usersList');
+            list.innerHTML = '';
+            snap.forEach(d => {
+                list.innerHTML += `<div class="flex justify-between items-center bg-slate-50 p-3 rounded-xl border">
+                    <span class="font-bold text-sm">${d.data().name}</span>
+                    <button onclick="deleteUser('${d.id}')" class="text-red-500"><i class="fas fa-trash"></i></button>
+                </div>`;
+            });
+        });
+
+        window.addUser = async () => {
+            const name = document.getElementById('userName').value;
+            const email = document.getElementById('userEmail').value;
+            if(name && email) {
+                await addDoc(collection(db, "users"), { name, email });
+                document.getElementById('userName').value = '';
+                document.getElementById('userEmail').value = '';
+            }
+        };
+
+        window.deleteUser = async (id) => { if(confirm("למחוק?")) await deleteDoc(doc(db, "users", id)); };
     </script>
 </body>
 </html>
