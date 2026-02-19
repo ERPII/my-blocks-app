@@ -3,100 +3,128 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ניהול קוביות | MyBlocks</title>
+    <title>MyBlocks Admin</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Assistant:wght@400;800&display=swap');
-        body { font-family: 'Assistant', sans-serif; background: #f1f5f9; }
-        .field-dark { @apply w-full p-4 border-2 border-slate-800 rounded-2xl font-bold bg-white outline-none focus:border-indigo-600 transition-all; }
+        @import url('https://fonts.googleapis.com/css2?family=Assistant:wght@400;700;800&display=swap');
         
-        /* תיקון מודאלים - הם מוסתרים בברירת מחדל */
+        body { 
+            font-family: 'Assistant', sans-serif; 
+            background-color: #f4f7f9; 
+            overflow-x: hidden; /* ביטול גלגלת אופקית */
+        }
+
+        /* שדות קלט ללא מסגרת לפי התמונה */
+        .input-clean {
+            @apply w-full p-3 bg-transparent border-none outline-none font-bold text-slate-600;
+        }
+
+        /* כפתורים עם מסגרת שחורה לפי התמונה */
+        .btn-bordered {
+            @apply border-2 border-slate-900 rounded-2xl p-4 flex items-center justify-center gap-2 font-black transition-all hover:bg-slate-50;
+        }
+
+        /* מודאל */
         .modal { 
-            display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.9); 
-            z-index: 9999; align-items: center; justify-content: center; backdrop-filter: blur(4px);
+            display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); 
+            z-index: 9999; align-items: center; justify-content: center; backdrop-filter: blur(5px);
         }
         .modal.active { display: flex; }
-        .modal-content { @apply bg-white p-8 rounded-[2.5rem] w-full max-w-lg shadow-2xl relative; }
+
+        /* תצוגה מקדימה לתמונות */
+        .preview-container {
+            @apply flex flex-wrap gap-4 mt-4;
+        }
+        .preview-item {
+            @apply relative w-24 h-24 rounded-xl overflow-hidden border-2 border-indigo-200;
+        }
+        .preview-item img { @apply w-full h-full object-cover; }
+        .remove-img {
+            @apply absolute top-1 right-1 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs cursor-pointer;
+        }
     </style>
 </head>
-<body class="p-4 md:p-8">
+<body class="p-4 md:p-10">
 
     <div id="timingModal" class="modal">
-        <div class="modal-content">
+        <div class="bg-white p-8 rounded-[2.5rem] w-full max-w-md shadow-2xl">
             <h3 class="text-2xl font-black mb-6">הגדרות תזמון</h3>
-            <div class="space-y-4">
-                <div class="grid grid-cols-2 gap-4">
-                    <div>
-                        <label class="text-xs font-bold text-slate-400">התחלה:</label>
-                        <input type="datetime-local" id="scheduleDate" class="field-dark !p-2 text-sm">
-                    </div>
-                    <div>
-                        <label class="text-xs font-bold text-slate-400">סיום:</label>
-                        <input type="datetime-local" id="expiryDate" class="field-dark !p-2 text-sm">
-                    </div>
-                </div>
-                <textarea id="preMsg" class="field-dark h-20" placeholder="טקסט לפני הזמן..."></textarea>
-                <textarea id="postMsg" class="field-dark h-20" placeholder="טקסט אחרי הזמן..."></textarea>
+            <div class="space-y-4 text-right">
+                <input type="datetime-local" id="scheduleDate" class="w-full p-4 border rounded-2xl font-bold">
+                <input type="datetime-local" id="expiryDate" class="w-full p-4 border rounded-2xl font-bold">
+                <textarea id="preMsg" class="w-full p-4 border rounded-2xl font-bold h-20" placeholder="הודעה לפני הזמן"></textarea>
+                <textarea id="postMsg" class="w-full p-4 border rounded-2xl font-bold h-20" placeholder="הודעה אחרי הזמן"></textarea>
             </div>
-            <button onclick="closeModal('timingModal')" class="w-full mt-6 py-4 bg-slate-900 text-white rounded-2xl font-black">אישור וסגירה</button>
-        </div>
-    </div>
-
-    <div id="qrModal" class="modal">
-        <div class="modal-content text-center max-w-sm">
-            <h3 class="text-xl font-black mb-4">קוד QR</h3>
-            <div id="qrcode" class="flex justify-center mb-6 p-4 border rounded-2xl"></div>
-            <div class="flex gap-2">
-                <button id="downloadQR" class="flex-1 py-4 bg-green-600 text-white rounded-2xl font-black">הורד תמונה</button>
-                <button onclick="closeModal('qrModal')" class="flex-1 py-4 bg-slate-100 rounded-2xl">סגור</button>
-            </div>
+            <button onclick="toggleModal('timingModal', false)" class="w-full mt-6 py-4 bg-slate-900 text-white rounded-2xl font-black">סגור</button>
         </div>
     </div>
 
     <div class="max-w-6xl mx-auto">
-        <header class="mb-10 p-6 bg-white rounded-[2rem] shadow-sm flex justify-between items-center border-b-4 border-slate-800">
-            <h1 class="text-3xl font-black">MyBlocks <span class="text-indigo-600">Admin</span></h1>
-            <a href="settings.html" class="p-3 bg-slate-50 rounded-full border hover:bg-slate-100 transition"><i class="fas fa-cog"></i> הגדרות</a>
+        <header class="bg-white p-6 rounded-[3rem] shadow-sm border-b-4 border-slate-900 flex justify-between items-center mb-10">
+            <h1 id="mainTitle" class="text-4xl font-black text-slate-900">MyBlocks <span class="text-indigo-600">Admin</span></h1>
+            <a href="settings.html" class="flex items-center gap-2 p-3 px-5 bg-slate-50 border border-slate-200 rounded-full font-bold hover:bg-slate-100">
+                <span>הגדרות</span> <i class="fas fa-cog"></i>
+            </a>
         </header>
 
-        <div class="bg-white p-8 rounded-[3rem] shadow-xl border border-slate-200 mb-12">
+        <div class="bg-white p-10 rounded-[4rem] shadow-xl border border-slate-100 mb-12 relative overflow-hidden">
             <input type="hidden" id="editId">
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
-                <div class="space-y-4">
-                    <input type="text" id="title" class="field-dark" placeholder="כותרת הקובייה *">
-                    <textarea id="desc" class="field-dark h-36" placeholder="תיאור..."></textarea>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-12">
+                <div class="space-y-6 text-right">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-400 mb-1">כותרת הקובייה *</label>
+                        <input type="text" id="title" class="input-clean text-2xl" placeholder="כותרת הקובייה...">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-400 mb-1">תיאור...</label>
+                        <textarea id="desc" class="input-clean h-32 resize-none" placeholder="תיאור..."></textarea>
+                    </div>
                 </div>
-                <div class="space-y-4">
-                    <input type="url" id="externalUrl" class="field-dark text-left" dir="ltr" placeholder="קישור חיצוני (https://)">
-                    <textarea id="customHtml" class="field-dark h-36 text-left font-mono text-xs" dir="ltr" placeholder="קוד HTML חופשי (Embed)"></textarea>
+                <div class="space-y-6 text-right">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-400 mb-1">קישור חיצוני (https://)</label>
+                        <input type="url" id="externalUrl" class="input-clean text-left" dir="ltr" placeholder="קישור חיצוני...">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-400 mb-1">חופשי (Embed) קוד HTML</label>
+                        <textarea id="customHtml" class="input-clean h-32 text-left font-mono text-sm" dir="ltr" placeholder="<p>קוד HTML כאן...</p>"></textarea>
+                    </div>
                 </div>
             </div>
 
-            <div class="flex flex-wrap gap-4 p-6 bg-slate-50 rounded-[2rem] items-center">
-                <button onclick="openModal('timingModal')" class="px-6 py-4 bg-white border-2 border-slate-800 rounded-2xl font-black flex-1 min-w-[200px] shadow-sm">
-                    <i class="fas fa-clock ml-2"></i> תזמון והודעות
+            <div class="mt-12 p-8 bg-slate-50 rounded-[3rem] flex flex-wrap items-center gap-4">
+                
+                <button onclick="toggleModal('timingModal', true)" class="btn-bordered flex-1 min-w-[200px] bg-white">
+                    <i class="fas fa-clock"></i> תזמון והודעות
                 </button>
-                <div class="flex items-center gap-2 bg-white p-3 px-5 border-2 border-slate-800 rounded-2xl shadow-sm">
-                    <span class="font-bold">צבע רקע:</span>
-                    <input type="color" id="bgColor" value="#ffffff" class="w-10 h-10 cursor-pointer">
+
+                <div class="btn-bordered bg-white min-w-[150px]">
+                    <span class="text-sm">צבע רקע:</span>
+                    <input type="color" id="bgColor" value="#ffffff" class="w-8 h-8 cursor-pointer rounded-lg border-none bg-transparent">
                 </div>
-                <button onclick="document.getElementById('mediaFiles').click()" class="px-6 py-4 bg-indigo-50 text-indigo-700 border-2 border-indigo-200 rounded-2xl font-black flex-1">
-                    <i class="fas fa-images ml-2"></i> בחירת תמונות/וידאו
+
+                <button onclick="document.getElementById('mediaFiles').click()" class="flex-1 min-w-[200px] p-5 bg-indigo-50 text-indigo-700 rounded-2xl font-black flex items-center justify-center gap-2 hover:bg-indigo-100">
+                    <i class="fas fa-images"></i> בחירת תמונות/וידאו
                 </button>
-                <input type="file" id="mediaFiles" multiple class="hidden">
+                <input type="file" id="mediaFiles" multiple class="hidden" onchange="handleFileSelect(event)">
             </div>
 
-            <button onclick="saveBlock()" id="saveBtn" class="w-full mt-10 py-6 bg-slate-900 text-white rounded-[2.5rem] font-black text-2xl shadow-2xl hover:bg-black transition-all transform active:scale-95">שמור קובייה ✨</button>
+            <div id="imagePreview" class="preview-container px-8"></div>
+
+            <button onclick="saveBlock()" id="saveBtn" class="w-full mt-10 py-6 bg-slate-900 text-white rounded-[2.5rem] font-black text-2xl shadow-2xl hover:bg-black transition-all transform active:scale-95">
+                שמור קובייה ✨
+            </button>
         </div>
 
-        <div id="canvas" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 pb-24"></div>
+        <div id="canvas" class="grid grid-cols-1 md:grid-cols-3 gap-8 pb-20"></div>
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js";
-        import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, doc, deleteDoc, updateDoc, getDocs, serverTimestamp } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, doc, deleteDoc, updateDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore.js";
         import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-storage.js";
 
         const firebaseConfig = {
@@ -111,109 +139,107 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
         const storage = getStorage(app);
-        let blocks = [];
+        
+        let selectedFiles = []; // אחסון הקבצים שנבחרו
 
-        // פונקציות חלון קופץ
-        window.openModal = (id) => document.getElementById(id).classList.add('active');
-        window.closeModal = (id) => document.getElementById(id).classList.remove('active');
-
-        // טעינת קוביות
-        onSnapshot(query(collection(db, "blocks"), orderBy("createdAt", "desc")), s => {
-            blocks = []; 
-            s.forEach(d => blocks.push({id: d.id, ...d.data()}));
-            renderBlocks();
+        // טעינת הגדרות המותג מהדף הראשון
+        onSnapshot(doc(db, "settings", "general"), snap => {
+            if(snap.exists()) {
+                const d = snap.data();
+                document.getElementById('mainTitle').innerText = d.appName || 'MyBlocks Admin';
+            }
         });
+
+        // פונקציות עזר
+        window.toggleModal = (id, show) => {
+            document.getElementById(id).classList.toggle('active', show);
+        };
+
+        // טיפול בבחירת קבצים ותצוגה מקדימה
+        window.handleFileSelect = (e) => {
+            const files = Array.from(e.target.files);
+            selectedFiles = [...selectedFiles, ...files];
+            renderPreview();
+        };
+
+        function renderPreview() {
+            const container = document.getElementById('imagePreview');
+            container.innerHTML = '';
+            selectedFiles.forEach((file, index) => {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    container.innerHTML += `
+                        <div class="preview-item">
+                            <img src="${e.target.result}">
+                            <div class="remove-img" onclick="removeSelectedFile(${index})">×</div>
+                        </div>`;
+                };
+                reader.readAsDataURL(file);
+            });
+        }
+
+        window.removeSelectedFile = (index) => {
+            selectedFiles.splice(index, 1);
+            renderPreview();
+        };
 
         // שמירת קובייה
         window.saveBlock = async () => {
             const btn = document.getElementById('saveBtn');
-            const editId = document.getElementById('editId').value;
-            const files = document.getElementById('mediaFiles').files;
+            const title = document.getElementById('title').value;
+            if(!title) return alert("חובה להזין כותרת");
 
-            if(!document.getElementById('title').value) return alert("חובה כותרת!");
-            btn.innerText = "שומר...";
-            btn.disabled = true;
+            btn.disabled = true; btn.innerText = "שומר...";
 
             try {
-                let mediaUrls = editId ? (blocks.find(b => b.id === editId).mediaUrls || []) : [];
-                for(let f of files) {
-                    const r = ref(storage, `content/${Date.now()}_${f.name}`);
-                    await uploadBytes(r, f);
+                const mediaUrls = [];
+                for(let file of selectedFiles) {
+                    const r = ref(storage, `content/${Date.now()}_${file.name}`);
+                    await uploadBytes(r, file);
                     mediaUrls.push(await getDownloadURL(r));
                 }
 
                 const data = {
-                    title: document.getElementById('title').value,
+                    title: title,
                     description: document.getElementById('desc').value,
-                    customHtml: document.getElementById('customHtml').value,
                     url: document.getElementById('externalUrl').value,
+                    customHtml: document.getElementById('customHtml').value,
                     bgColor: document.getElementById('bgColor').value,
                     scheduleDate: document.getElementById('scheduleDate').value,
                     expiryDate: document.getElementById('expiryDate').value,
                     preMsg: document.getElementById('preMsg').value,
                     postMsg: document.getElementById('postMsg').value,
-                    mediaUrls: mediaUrls
+                    mediaUrls: mediaUrls,
+                    createdAt: serverTimestamp(),
+                    views: 0
                 };
 
-                if(editId) {
-                    await updateDoc(doc(db, "blocks", editId), data);
-                } else {
-                    data.createdAt = serverTimestamp();
-                    data.views = 0;
-                    await addDoc(collection(db, "blocks"), data);
-                }
-                alert("נשמר!");
+                await addDoc(collection(db, "blocks"), data);
+                alert("נשמר בהצלחה!");
                 location.reload();
             } catch (e) {
-                alert("שגיאה: " + e.message);
+                alert("שגיאה בשמירה");
                 btn.disabled = false;
             }
         };
 
-        window.renderBlocks = () => {
-            const container = document.getElementById('canvas');
-            container.innerHTML = '';
-            blocks.forEach(b => {
-                // יצירת קישור מדויק - מבטיח שהקישור יפתח את view.html באותה תיקייה
-                const shareUrl = window.location.origin + window.location.pathname.replace('admin.html', 'view.html') + '?id=' + b.id;
-
-                container.innerHTML += `
-                    <div class="bg-white p-6 rounded-[2.5rem] shadow-lg border">
-                        <img src="${b.mediaUrls?.[0] || ''}" class="w-full h-40 object-cover rounded-3xl mb-4 bg-slate-50">
-                        <h4 class="font-black truncate mb-4">${b.title}</h4>
-                        <div class="grid grid-cols-5 gap-2">
-                            <button onclick="editBlock('${b.id}')" class="p-3 bg-amber-50 text-amber-600 rounded-xl"><i class="fas fa-edit"></i></button>
-                            <button onclick="window.open('${shareUrl}', '_blank')" class="p-3 bg-blue-50 text-blue-600 rounded-xl"><i class="fas fa-external-link-alt"></i></button>
-                            <button onclick="showQR('${shareUrl}')" class="p-3 bg-indigo-50 text-indigo-600 rounded-xl"><i class="fas fa-qrcode"></i></button>
-                            <button onclick="copyLink('${shareUrl}')" class="p-3 bg-green-50 text-green-600 rounded-xl"><i class="fas fa-copy"></i></button>
-                            <button onclick="deleteBlock('${b.id}')" class="p-3 bg-red-50 text-red-600 rounded-xl"><i class="fas fa-trash"></i></button>
+        // טעינת הקוביות לקנבס
+        onSnapshot(query(collection(db, "blocks"), orderBy("createdAt", "desc")), snap => {
+            const canvas = document.getElementById('canvas');
+            canvas.innerHTML = '';
+            snap.forEach(d => {
+                const b = d.data();
+                canvas.innerHTML += `
+                    <div class="bg-white p-6 rounded-[3rem] shadow-lg border border-slate-100">
+                        <img src="${b.mediaUrls?.[0] || ''}" class="w-full h-40 object-cover rounded-2xl mb-4">
+                        <h4 class="font-black text-xl mb-4">${b.title}</h4>
+                        <div class="flex gap-2">
+                             <button onclick="deleteBlock('${d.id}')" class="flex-1 p-3 bg-red-50 text-red-600 rounded-xl"><i class="fas fa-trash"></i></button>
                         </div>
                     </div>`;
             });
-        };
+        });
 
-        window.showQR = (url) => {
-            const qrdiv = document.getElementById('qrcode');
-            qrdiv.innerHTML = '';
-            new QRCode(qrdiv, { text: url, width: 200, height: 200 });
-            openModal('qrModal');
-            document.getElementById('downloadQR').onclick = () => {
-                const img = qrdiv.querySelector('img').src;
-                const a = document.createElement('a'); a.href = img; a.download = 'qr.png'; a.click();
-            };
-        };
-
-        window.copyLink = (u) => { navigator.clipboard.writeText(u); alert("הועתק!"); };
-        window.editBlock = (id) => {
-            const b = blocks.find(x => x.id === id);
-            document.getElementById('editId').value = b.id;
-            document.getElementById('title').value = b.title;
-            document.getElementById('desc').value = b.description;
-            document.getElementById('customHtml').value = b.customHtml || '';
-            document.getElementById('externalUrl').value = b.url || '';
-            document.getElementById('bgColor').value = b.bgColor || '#ffffff';
-            window.scrollTo({top: 0, behavior: 'smooth'});
-        };
         window.deleteBlock = async (id) => { if(confirm("למחוק?")) await deleteDoc(doc(db, "blocks", id)); };
     </script>
 </body>
