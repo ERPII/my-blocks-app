@@ -7,24 +7,37 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Assistant:wght@400;800&display=swap');
-        body { font-family: 'Assistant', sans-serif; transition: background 0.5s; }
-        .gallery-container::-webkit-scrollbar { display: none; }
+        body { font-family: 'Assistant', sans-serif; min-height: 100vh; transition: background 0.6s ease; }
+        .gallery-item { min-width: 100%; snap-align: center; height: 350px; object-fit: cover; border-radius: 2.5rem; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
     </style>
 </head>
-<body class="flex flex-col items-center justify-center p-4 min-h-screen">
+<body class="flex flex-col items-center justify-start p-4 md:p-10">
 
-    <div id="content" class="max-w-2xl w-full text-center hidden">
-        <div id="gallery" class="gallery-container flex overflow-x-auto gap-4 mb-8 snap-x"></div>
+    <div id="loader" class="mt-20 flex flex-col items-center gap-4">
+        <div class="w-10 h-10 border-4 border-indigo-100 border-t-indigo-600 rounded-full animate-spin"></div>
+    </div>
+
+    <div id="content" class="max-w-2xl w-full hidden">
+        <div id="gallery" class="flex overflow-x-auto gap-4 mb-8 snap-x no-scrollbar shadow-2xl rounded-[2.5rem]"></div>
         
-        <h1 id="title" class="text-4xl font-black text-slate-800 mb-4"></h1>
-        <p id="desc" class="text-slate-600 mb-8 whitespace-pre-wrap"></p>
-        <div id="htmlDisplay" class="mb-10 text-right"></div>
-        <a id="mainBtn" href="#" target="_blank" class="inline-block w-full py-6 bg-indigo-600 text-white rounded-[2rem] font-black shadow-xl hover:scale-95 transition text-xl">מעבר לתוכן המלא</a>
+        <div class="text-center px-4">
+            <h1 id="title" class="text-4xl md:text-5xl font-black text-slate-800 mb-4 tracking-tight"></h1>
+            <p id="desc" class="text-slate-600 text-lg mb-8 whitespace-pre-wrap leading-relaxed"></p>
+            
+            <div id="htmlDisplay" class="mb-10 text-right overflow-hidden rounded-2xl"></div>
+            
+            <a id="mainBtn" href="#" target="_blank" class="inline-block w-full py-6 bg-indigo-600 text-white rounded-[2.5rem] font-black shadow-2xl hover:bg-indigo-700 transition transform active:scale-95 text-xl">מעבר לתוכן המלא</a>
+        </div>
+        
+        <footer class="mt-16 text-center text-slate-400 text-xs font-bold uppercase tracking-widest">
+            Created with MyBlocks Pro
+        </footer>
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js";
-        import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore.js";
+        import { getFirestore, doc, getDoc, updateDoc, increment } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyB0f0u0WqlScU5r9PE0wm0GkKA3f1MFHv8",
@@ -43,6 +56,16 @@
             getDoc(doc(db, "blocks", id)).then(snap => {
                 if(snap.exists()) {
                     const d = snap.data();
+                    
+                    // בדיקת תפוגה
+                    if(d.expiryDate && new Date(d.expiryDate) < new Date().setHours(0,0,0,0)) {
+                        document.getElementById('loader').innerHTML = "<h1 class='text-xl font-black text-red-500'>הקישור פג תוקף ⏳</h1>";
+                        return;
+                    }
+
+                    // עדכון צפיות
+                    updateDoc(doc(db, "blocks", id), { views: increment(1) });
+
                     document.body.style.backgroundColor = d.bgColor || "#ffffff";
                     document.getElementById('title').innerText = d.title;
                     document.getElementById('desc').innerText = d.description || "";
@@ -51,13 +74,17 @@
                     const gallery = document.getElementById('gallery');
                     if(d.mediaUrls && d.mediaUrls.length) {
                         d.mediaUrls.forEach(url => {
-                            gallery.innerHTML += `<img src="${url}" class="h-64 md:h-96 rounded-[2rem] shadow-lg snap-center">`;
+                            gallery.innerHTML += `<img src="${url}" class="gallery-item">`;
                         });
                     } else { gallery.style.display = 'none'; }
 
                     if(d.url) document.getElementById('mainBtn').href = d.url;
                     else document.getElementById('mainBtn').style.display = 'none';
+                    
+                    document.getElementById('loader').style.display = 'none';
                     document.getElementById('content').classList.remove('hidden');
+                } else {
+                    document.getElementById('loader').innerHTML = "<h1 class='text-xl font-black'>הדף לא קיים</h1>";
                 }
             });
         }
