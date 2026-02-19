@@ -7,14 +7,26 @@
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Assistant:wght@400;800&display=swap');
         body { font-family: 'Assistant', sans-serif; background: #f8fafc; overflow: hidden; }
+        .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 9999; align-items: center; justify-content: center; backdrop-filter: blur(5px); }
+        .modal.active { display: flex; }
     </style>
 </head>
 <body class="p-10">
+
+    <div id="customAlert" class="modal">
+        <div class="bg-white p-8 rounded-[2.5rem] w-full max-w-sm shadow-2xl text-center">
+            <div id="alertIcon" class="text-4xl mb-4">✅</div>
+            <h3 id="alertTitle" class="text-2xl font-black mb-2"></h3>
+            <p id="alertMsg" class="text-slate-500 font-bold mb-6"></p>
+            <button onclick="document.getElementById('customAlert').classList.remove('active')" class="w-full py-3 bg-slate-900 text-white rounded-xl font-black">הבנתי</button>
+        </div>
+    </div>
+
     <div class="max-w-2xl mx-auto bg-white p-10 rounded-[3rem] shadow-2xl">
         <h2 class="text-3xl font-black mb-8 text-indigo-600">הגדרות מערכת</h2>
         
-        <label class="block font-bold mb-2">שם האפליקציה (שם האדמין):</label>
-        <input type="text" id="appName" class="w-full p-4 border-2 border-slate-900 rounded-2xl mb-6 font-bold" placeholder="למשל: MyBlocks Pro">
+        <label class="block font-bold mb-2">שם האפליקציה:</label>
+        <input type="text" id="appName" class="w-full p-4 border-2 border-slate-900 rounded-2xl mb-6 font-bold">
         
         <label class="block font-bold mb-2">צבע מותג:</label>
         <input type="color" id="brandColor" class="w-full h-14 border-2 border-slate-900 rounded-2xl mb-10 cursor-pointer">
@@ -44,21 +56,19 @@
 
         onSnapshot(doc(db, "settings", "general"), snap => {
             if(snap.exists()) {
-                const d = snap.data();
-                document.getElementById('appName').value = d.appName || '';
-                document.getElementById('brandColor').value = d.brandColor || '#4f46e5';
+                document.getElementById('appName').value = snap.data().appName || '';
+                document.getElementById('brandColor').value = snap.data().brandColor || '#4f46e5';
             }
         });
 
         window.save = async () => {
-            const btn = document.getElementById('saveBtn');
-            btn.innerText = "שומר...";
             await setDoc(doc(db, "settings", "general"), {
                 appName: document.getElementById('appName').value,
                 brandColor: document.getElementById('brandColor').value
             });
-            alert("ההגדרות נשמרו!");
-            btn.innerText = "שמור שינויים ✨";
+            document.getElementById('alertTitle').innerText = "נשמר!";
+            document.getElementById('alertMsg').innerText = "הגדרות המערכת עודכנו בהצלחה";
+            document.getElementById('customAlert').classList.add('active');
         };
     </script>
 </body>
