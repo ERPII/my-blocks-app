@@ -1,32 +1,65 @@
-<style>
-    /* שינוי הגודל והעיצוב של הכותרת הראשית בדף הצפייה */
-    #title {
-        font-size: 3.75rem; /* גודל האותיות (6xl) */
-        color: #0f172a; /* צבע הכותרת (כחול כהה מאוד) */
-        font-weight: 900; /* עובי האותיות */
-    }
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <title>Live View</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Assistant:wght@400;800&display=swap');
+        
+        /* שינוי עיצוב: דף הצפייה */
+        body { font-family: 'Assistant', sans-serif; transition: background 1s ease; overflow-x: hidden; }
 
-    /* שינוי העיצוב של הטקסט שמתחת לכותרת */
-    #desc {
-        font-size: 1.5rem; /* גודל הטקסט (2xl) */
-        color: #475569; /* צבע הטקסט (אפור) */
-        margin-bottom: 2.5rem; /* המרחק בין הטקסט לכפתור למטה */
-    }
+        /* עיצוב התמונות/וידאו שמתחלפים */
+        .media-item { 
+            display: none; width: 100%; height: 70vh; 
+            object-fit: contain; border-radius: 3rem; 
+        }
+        .media-item.active { display: block; animation: fadeIn 0.8s ease; }
 
-    /* עיצוב הכפתור הגדול שבתחתית הדף */
-    #mainBtn {
-        background-color: #4f46e5; /* צבע הכפתור (אינדיגו) */
-        color: #ffffff; /* צבע הטקסט בתוך הכפתור */
-        padding: 1.5rem 3.5rem; /* גודל הכפתור (פנים) */
-        border-radius: 2.5rem; /* עיגול הפינות של הכפתור */
-    }
+        /* שינוי טקסט/עיצוב: כותרת ראשית */
+        #title { font-size: 4rem; font-weight: 900; color: #1e293b; margin-top: 1rem; }
+        
+        /* עיצוב הודעות הסטטוס (ממתין / הסתיים) */
+        .status-msg { @apply text-4xl font-black bg-white/90 p-12 rounded-[3rem] shadow-2xl; }
+        
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    </style>
+</head>
+<body class="flex flex-col items-center justify-center p-6 min-h-screen">
 
-    /* מהירות האנימציה של המעבר בין תמונות */
-    .media-item {
-        animation: fadeIn 0.8s ease; /* 0.8s זה זמן הופעת התמונה (שנייה אחת בערך) */
-    }
-</style>
+    <div id="statusView" class="hidden text-center"><h1 id="statusText" class="status-msg"></h1></div>
 
-<body>
-    <a id="mainBtn">מעבר לקישור</a> 
+    <div id="content" class="max-w-6xl w-full hidden text-center">
+        <div id="mediaBox" class="mb-10"></div>
+        <h1 id="title"></h1> <p id="desc" class="text-2xl text-slate-700 mb-8"></p> <div id="customHtmlContainer" class="w-full my-6"></div>
+
+        <div class="mt-10">
+            <a id="mainBtn" href="#" target="_blank" class="px-14 py-6 bg-indigo-600 text-white rounded-[2.5rem] font-black text-2xl shadow-xl">לחץ כאן</a>
+        </div>
+    </div>
+
+    <script type="module">
+        /* --- פונקציות הזרקה וספירת צפיות --- */
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js";
+        import { getFirestore, doc, onSnapshot, updateDoc, increment } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore.js";
+
+        // הגדרות Firebase...
+        
+        // פונקציית העיבוד (בודקת אם להציג תוכן או הודעת תזמון)
+        function updateDisplay(d) {
+            const now = new Date();
+            const start = d.scheduleDate ? new Date(d.scheduleDate) : null;
+            const end = d.expiryDate ? new Date(d.expiryDate) : null;
+
+            if(start && now < start) {
+                showStatus(d.preMsg || "התוכן יעלה בקרוב..."); // שינוי טקסט ברירת מחדל
+            } else if(end && now > end) {
+                showStatus(d.postMsg || "התוכן כבר אינו זמין."); // שינוי טקסט ברירת מחדל
+            } else {
+                renderFullContent(d);
+            }
+        }
+    </script>
 </body>
+</html>
