@@ -3,47 +3,46 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin - Auto Scroll & Time Logic</title>
+    <title>Admin - Full Management</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Assistant:wght@400;700;800&display=swap');
-        body { font-family: 'Assistant', sans-serif; background-color: #cbd5e1; margin: 0; padding: 0; overflow-x: hidden; }
+        body { font-family: 'Assistant', sans-serif; background-color: #cbd5e1; margin: 0; padding: 0; }
         
-        .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 9999; align-items: center; justify-content: center; backdrop-filter: blur(8px); }
+        .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 9999; align-items: center; justify-content: center; backdrop-filter: blur(8px); }
         .modal.active { display: flex; }
 
-        /* אנימציית גלילה למעלה */
         @keyframes scrollUp {
             0% { transform: translateY(100%); }
             100% { transform: translateY(-100%); }
         }
 
-        .scroll-container {
-            position: relative;
-            height: 100%;
-            overflow: hidden;
-        }
-
-        .scroll-content {
-            position: absolute;
-            width: 100%;
-            animation: scrollUp var(--scroll-speed, 10s) linear infinite;
-        }
-
-        /* עצירת גלילה במעבר עכבר */
-        .scroll-container:hover .scroll-content {
-            animation-play-state: paused;
-        }
+        .scroll-container { position: relative; height: 100%; overflow: hidden; }
+        .scroll-content { position: absolute; width: 100%; animation: scrollUp var(--scroll-speed, 10s) linear infinite; }
+        .scroll-container:hover .scroll-content { animation-play-state: paused; }
     </style>
 </head>
 <body class="p-4 md:p-8">
 
-    <button onclick="toggleModal('historyModal', true)" class="fixed top-5 left-5 z-50 p-4 bg-white border-4 border-black rounded-2xl shadow-2xl font-black">
+    <button onclick="toggleModal('historyModal', true)" class="fixed top-5 left-5 z-50 p-4 bg-white border-4 border-black rounded-2xl shadow-2xl font-black transition hover:scale-105">
         <i class="fas fa-history ml-2"></i> היסטוריה
     </button>
+
+    <div id="qrModal" class="modal">
+        <div class="bg-white p-8 rounded-[3rem] w-full max-w-sm shadow-2xl text-center border-4 border-black">
+            <h3 class="text-2xl font-black mb-6">קוד QR לקובייה</h3>
+            <div id="qrcode" class="flex justify-center mb-6 p-4 border-2 rounded-2xl bg-white"></div>
+            <div class="flex flex-col gap-3">
+                <button id="downloadQR" class="w-full py-4 bg-green-600 text-white rounded-2xl font-black flex items-center justify-center gap-2">
+                    <i class="fas fa-download"></i> הורד תמונה
+                </button>
+                <button onclick="toggleModal('qrModal', false)" class="w-full py-4 bg-slate-200 rounded-2xl font-bold">סגור</button>
+            </div>
+        </div>
+    </div>
 
     <div id="historyModal" class="modal">
         <div class="bg-white p-8 rounded-[3rem] w-full max-w-lg shadow-2xl border-4 border-black max-h-[80vh] flex flex-col">
@@ -65,8 +64,8 @@
             <input type="hidden" id="editId">
             <div class="grid grid-cols-1 md:grid-cols-2 gap-10">
                 <div class="flex flex-col gap-6">
-                    <input type="text" id="title" class="text-3xl font-black outline-none border-b-4 border-slate-100 focus:border-black p-2" placeholder="כותרת הקובייה">
-                    <textarea id="desc" class="h-32 p-4 bg-slate-50 rounded-3xl outline-none font-bold" placeholder="הטקסט שירוץ למעלה..."></textarea>
+                    <input type="text" id="title" class="text-3xl font-black outline-none border-b-4 border-slate-100 focus:border-black p-2 transition" placeholder="כותרת הקובייה">
+                    <textarea id="desc" class="h-32 p-4 bg-slate-50 rounded-3xl outline-none font-bold focus:ring-2 ring-black transition" placeholder="הטקסט שירוץ למעלה..."></textarea>
                 </div>
                 <div class="flex flex-col gap-6">
                     <input type="url" id="externalUrl" class="text-left font-bold text-blue-600 border-b-4 border-slate-100 p-2" dir="ltr" placeholder="Link (URL)">
@@ -77,17 +76,17 @@
             <div class="mt-10 p-6 bg-slate-100 rounded-[3rem] flex flex-wrap items-center gap-4 border-2">
                 <button onclick="toggleModal('timingModal', true)" class="p-4 bg-white border-4 border-black rounded-2xl font-black flex-1">זמנים והודעות</button>
                 <div class="flex items-center gap-4 bg-white p-2 px-4 border-4 border-black rounded-2xl">
-                    <input type="color" id="bgColor" value="#ffffff" class="w-8 h-8">
+                    <input type="color" id="bgColor" value="#ffffff" class="w-8 h-8 cursor-pointer">
                     <div class="flex flex-col items-center">
-                        <span class="text-[9px] font-black">מהירות גלילה (שניות)</span>
-                        <input type="number" id="slideSpeed" value="10" class="w-10 text-center font-black outline-none">
+                        <span class="text-[9px] font-black">מהירות גלילה</span>
+                        <input type="number" id="slideSpeed" value="10" class="w-10 text-center font-black outline-none bg-transparent">
                     </div>
                 </div>
-                <button onclick="document.getElementById('mediaFiles').click()" class="flex-[2] p-4 bg-indigo-600 text-white rounded-2xl font-black">הוסף תמונות</button>
+                <button onclick="document.getElementById('mediaFiles').click()" class="flex-[2] p-4 bg-indigo-600 text-white rounded-2xl font-black hover:bg-indigo-700 transition">הוסף תמונות</button>
                 <input type="file" id="mediaFiles" multiple class="hidden" onchange="handleFileSelect(event)">
             </div>
             <div id="imagePreview" class="mt-6 space-y-2"></div>
-            <button id="saveBtn" onclick="saveBlock()" class="w-full mt-10 py-6 bg-black text-white rounded-[2.5rem] font-black text-2xl">שמור ועדכן ✨</button>
+            <button id="saveBtn" onclick="saveBlock()" class="w-full mt-10 py-6 bg-black text-white rounded-[2.5rem] font-black text-2xl shadow-xl hover:scale-[1.01] active:scale-95 transition-all">שמור ופרסם ✨</button>
         </div>
 
         <div id="canvas" class="grid grid-cols-1 md:grid-cols-3 gap-8 pb-32"></div>
@@ -95,16 +94,16 @@
 
     <div id="timingModal" class="modal">
         <div class="bg-white p-8 rounded-[3rem] border-4 border-black w-full max-w-md">
-            <h3 class="text-2xl font-black mb-4">תזמון והודעות מערכת</h3>
+            <h3 class="text-2xl font-black mb-4 text-center">תזמון והודעות</h3>
             <div class="grid grid-cols-2 gap-4 mb-4">
-                <div><label class="text-[9px] font-bold">תאריך התחלה</label><input type="datetime-local" id="scheduleDate" class="w-full p-2 border-2 rounded-xl text-xs"></div>
-                <div><label class="text-[9px] font-bold">תאריך סיום</label><input type="datetime-local" id="expiryDate" class="w-full p-2 border-2 rounded-xl text-xs"></div>
+                <input type="datetime-local" id="scheduleDate" class="p-2 border-2 rounded-xl text-xs">
+                <input type="datetime-local" id="expiryDate" class="p-2 border-2 rounded-xl text-xs">
             </div>
             <div class="space-y-3">
-                <textarea id="preMsg" class="w-full p-3 bg-blue-50 border-2 rounded-xl text-xs" placeholder="הודעה שתוצג לפני שהזמן הגיע..."></textarea>
-                <textarea id="postMsg" class="w-full p-3 bg-red-50 border-2 rounded-xl text-xs" placeholder="הודעה שתוצג אחרי שהזמן עבר..."></textarea>
+                <textarea id="preMsg" class="w-full p-3 bg-blue-50 border-2 rounded-xl text-xs" placeholder="הודעה לפני שהזמן הגיע..."></textarea>
+                <textarea id="postMsg" class="w-full p-3 bg-red-50 border-2 rounded-xl text-xs" placeholder="הודעה אחרי שהזמן עבר..."></textarea>
             </div>
-            <button onclick="toggleModal('timingModal', false)" class="w-full mt-4 py-4 bg-black text-white rounded-2xl font-black">אישור</button>
+            <button onclick="toggleModal('timingModal', false)" class="w-full mt-6 py-4 bg-black text-white rounded-2xl font-black">סגור</button>
         </div>
     </div>
 
@@ -175,14 +174,6 @@
             } catch (e) { btn.disabled = false; }
         };
 
-        // לוגיקה לבדיקת זמן הצגה בקישור
-        function getStatusMessage(b) {
-            const now = new Date();
-            if (b.scheduleDate && new Date(b.scheduleDate) > now) return b.preMsg || "התוכן עדיין לא זמין";
-            if (b.expiryDate && new Date(b.expiryDate) < now) return b.postMsg || "פג תוקף התוכן";
-            return null; // הכל תקין
-        }
-
         onSnapshot(query(collection(db, "blocks"), orderBy("createdAt", "desc")), snap => {
             const canvas = document.getElementById('canvas');
             const historyList = document.getElementById('historyList');
@@ -190,50 +181,65 @@
             blocks = snap.docs.map(d => ({id: d.id, ...d.data()}));
             
             blocks.forEach(b => {
+                // מילוי היסטוריה
                 historyList.innerHTML += `
                     <div class="p-4 bg-slate-50 rounded-2xl border-2 flex justify-between items-center">
                         <div class="font-black text-sm">${b.title}</div>
                         <div class="flex gap-2">
-                            <button onclick="editBlock('${b.id}'); toggleModal('historyModal', false)" class="text-blue-500"><i class="fas fa-edit"></i></button>
-                            <button onclick="finalDelete('${b.id}')" class="text-red-400"><i class="fas fa-trash-alt"></i></button>
+                            <button onclick="editBlock('${b.id}'); toggleModal('historyModal', false)" class="text-blue-500 p-2"><i class="fas fa-edit"></i></button>
+                            <button onclick="finalDelete('${b.id}')" class="text-red-400 p-2"><i class="fas fa-trash-alt"></i></button>
                         </div>
                     </div>`;
 
                 if(b.isVisible !== false) {
-                    const statusMsg = getStatusMessage(b);
                     const uniqueLink = window.location.href.split('admin.html')[0] + 'view.html?id=' + b.id;
                     const media = b.mediaUrls?.[0] ? `<img src="${b.mediaUrls[0]}" class="w-full h-full object-cover">` : `<div class="w-full h-full bg-white flex items-center justify-center text-slate-100"><i class="fas fa-image text-4xl"></i></div>`;
                     
-                    // יצירת קובייה עם סליידר טקסט שנוסע למעלה
                     canvas.innerHTML += `
-                        <div class="bg-white p-5 rounded-[3.5rem] shadow-xl border-4 border-white flex flex-col h-[420px]">
+                        <div class="bg-white p-5 rounded-[3.5rem] shadow-xl border-4 border-white flex flex-col h-[450px] transition hover:translate-y--2">
                             <div class="h-40 bg-slate-50 rounded-[2.5rem] mb-4 overflow-hidden border-2 relative">
-                                ${statusMsg ? `<div class="absolute inset-0 bg-white/90 z-10 flex items-center justify-center p-4 text-center font-bold text-red-500 text-xs">${statusMsg}</div>` : ''}
                                 ${media}
                             </div>
-                            <h4 class="font-black text-lg mb-2 truncate">${b.title}</h4>
-                            <div class="flex-1 overflow-hidden bg-slate-50 rounded-2xl p-4 relative scroll-container">
+                            <h4 class="font-black text-lg mb-2 truncate px-2">${b.title}</h4>
+                            <div class="flex-1 overflow-hidden bg-slate-50 rounded-2xl p-4 relative scroll-container mx-2">
                                 <div class="scroll-content text-xs font-bold leading-relaxed" style="--scroll-speed: ${b.slideSpeed}s">
-                                    ${b.description || 'אין תיאור'}
+                                    ${b.description || 'אין תיאור להצגה'}
                                 </div>
                             </div>
-                            <div class="grid grid-cols-4 gap-1 mt-4">
-                                <button onclick="editBlock('${b.id}')" class="p-3 bg-amber-50 text-amber-600 rounded-xl"><i class="fas fa-edit"></i></button>
-                                <button onclick="duplicateBlock('${b.id}')" class="p-3 bg-purple-50 text-purple-600 rounded-xl"><i class="fas fa-copy"></i></button>
-                                <button onclick="hideFromCanvas('${b.id}')" class="p-3 bg-red-50 text-red-600 rounded-xl"><i class="fas fa-eye-slash"></i></button>
-                                <button onclick="showAlert('QR מוכן')" class="p-3 bg-green-50 text-green-600 rounded-xl"><i class="fas fa-qrcode"></i></button>
+                            <div class="grid grid-cols-5 gap-1 mt-4 px-2">
+                                <button onclick="window.open('${uniqueLink}', '_blank')" class="p-3 bg-blue-50 text-blue-600 rounded-xl" title="צפייה"><i class="fas fa-eye"></i></button>
+                                <button onclick="editBlock('${b.id}')" class="p-3 bg-amber-50 text-amber-600 rounded-xl" title="עריכה"><i class="fas fa-edit"></i></button>
+                                <button onclick="duplicateBlock('${b.id}')" class="p-3 bg-purple-50 text-purple-600 rounded-xl" title="שכפל"><i class="fas fa-copy"></i></button>
+                                <button onclick="showQR('${uniqueLink}')" class="p-3 bg-green-50 text-green-600 rounded-xl" title="קוד QR"><i class="fas fa-qrcode"></i></button>
+                                <button onclick="finalDelete('${b.id}')" class="p-3 bg-red-50 text-red-600 rounded-xl" title="מחיקה"><i class="fas fa-trash-alt"></i></button>
                             </div>
                         </div>`;
                 }
             });
         });
 
-        window.hideFromCanvas = async (id) => { await updateDoc(doc(db, "blocks", id), { isVisible: false }); showAlert("הוסתר מהלוח"); };
-        window.finalDelete = async (id) => { if(confirm("מחיקה סופית מהשרת?")) { await deleteDoc(doc(db, "blocks", id)); showAlert("נמחק סופית"); } };
+        window.finalDelete = async (id) => { if(confirm("למחוק את הקובייה לצמיתות?")) { await deleteDoc(doc(db, "blocks", id)); showAlert("נמחק סופית", "🗑️"); } };
+        
         window.duplicateBlock = async (id) => {
             const b = blocks.find(x => x.id === id);
             const newData = { ...b, title: b.title + " (עותק)", createdAt: serverTimestamp(), isVisible: true };
-            delete newData.id; await addDoc(collection(db, "blocks"), newData); showAlert("שוכפל!");
+            delete newData.id; 
+            await addDoc(collection(db, "blocks"), newData);
+            showAlert("הקובייה הועתקה!", "✨");
+        };
+
+        window.showQR = (url) => {
+            const qrdiv = document.getElementById('qrcode'); qrdiv.innerHTML = '';
+            new QRCode(qrdiv, { text: url, width: 200, height: 200 });
+            toggleModal('qrModal', true);
+            
+            document.getElementById('downloadQR').onclick = () => {
+                const img = qrdiv.querySelector('img').src;
+                const link = document.createElement('a');
+                link.href = img;
+                link.download = 'QR-Code.png';
+                link.click();
+            };
         };
 
         window.editBlock = (id) => {
